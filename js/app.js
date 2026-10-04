@@ -75,6 +75,8 @@
     main.innerHTML = '';
     main.appendChild(h('p.carregando', 'Carregando…'));
     try {
+      // papel de quem está logado: as telas usam App.posso() para esconder o que a pessoa não pode alterar
+      App.perfil = await App.db.perfil().catch(() => null);
       const conteudo = h('div.pagina');
       await pagina.render(conteudo, params, rotear);
       main.innerHTML = '';
@@ -88,6 +90,8 @@
     window.scrollTo(0, 0);
   }
   App.rotear = rotear;
+  // Atalho para as telas: App.posso('escalas', { ministerio_id }) — só esconde botões, quem bloqueia é o banco
+  App.posso = (tabela, registro) => App.pode(App.perfil, tabela, registro);
 
   function telaLogin() {
     const cfg = window.APP_CONFIG || {};

@@ -89,7 +89,8 @@
         h('button.btn-icone', { type: 'button', 'aria-label': 'Fechar', onclick: fechar }, '✕')),
       h('div.modal-corpo', conteudo));
     fundo.appendChild(caixa);
-    fundo.addEventListener('click', (e) => { if (e.target === fundo) fechar(); });
+    // Clicar fora da janela NÃO fecha: assim ninguém perde o que digitou sem querer.
+    // Fecha só pelo X, pelos botões da própria janela (Salvar, Apagar, Cancelar) ou pela tecla Esc.
     document.addEventListener('keydown', esc);
     document.body.appendChild(fundo);
     const foco = caixa.querySelector('input, select, textarea, button.btn');
@@ -172,11 +173,10 @@
     let m;
     const form = formulario(campos, registro || {}, {
       aoSalvar: async (dados) => {
-        if (registro) await App.db.update(tabela, registro.id, dados);
-        else await App.db.insert(tabela, dados);
+        const salvo = registro ? await App.db.update(tabela, registro.id, dados) : await App.db.insert(tabela, dados);
         m.fechar();
         toast(registro ? 'Alterações salvas.' : 'Cadastrado com sucesso.');
-        depois && depois();
+        depois && depois(salvo);
       },
       aoApagar: registro ? async () => {
         if (!(await confirmar(`Tem certeza que quer apagar ${nomeItem}? Isso não pode ser desfeito.`))) return;

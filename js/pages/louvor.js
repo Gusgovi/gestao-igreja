@@ -29,10 +29,10 @@
       mu.link ? h('p', h('a.link', { href: mu.link, target: '_blank', rel: 'noopener' }, '▶ Abrir link')) : null,
       mu.letra ? h('pre.letra', mu.letra) : h('p.muted', 'Sem letra cadastrada.'),
       mu.observacoes ? h('p.obs', mu.observacoes) : null,
-      h('div.acoes', h('button.btn.secundario', { type: 'button', onclick: () => {
+      App.posso('musicas') ? h('div.acoes', h('button.btn.secundario', { type: 'button', onclick: () => {
         m.fechar();
         App.editarRegistro({ tabela: 'musicas', titulo: 'Editar música', campos: CAMPOS_MUSICA, registro: mu, depois: recarregar, nomeItem: `"${mu.titulo}"` });
-      } }, '✎ Editar')),
+      } }, '✎ Editar')) : null,
     ], { largo: true });
   }
 
@@ -53,7 +53,7 @@
     };
     el.appendChild(h('div.barra-filtros',
       App.busca('Buscar música ou artista', (t) => { termo = t; desenhar(); }),
-      h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'musicas', titulo: 'Nova música', campos: CAMPOS_MUSICA, depois: recarregar }) }, '+ Nova música')));
+      App.posso('musicas') ? h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'musicas', titulo: 'Nova música', campos: CAMPOS_MUSICA, depois: recarregar }) }, '+ Nova música') : null));
     el.appendChild(lista);
     desenhar();
   }
@@ -69,8 +69,12 @@
     const proximos = ensaios.filter((e) => e.data >= hoje);
     const passados = ensaios.filter((e) => e.data < hoje).reverse();
 
-    el.appendChild(h('div.barra-acoes',
-      h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'ensaios', titulo: 'Marcar ensaio', campos: CAMPOS_ENSAIO, registro: null, depois: recarregar }) }, '+ Marcar ensaio')));
+    const podeEnsaios = App.posso('ensaios');
+    const podeSetlist = App.posso('ensaio_musicas');
+    if (podeEnsaios) {
+      el.appendChild(h('div.barra-acoes',
+        h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'ensaios', titulo: 'Marcar ensaio', campos: CAMPOS_ENSAIO, registro: null, depois: recarregar }) }, '+ Marcar ensaio')));
+    }
 
     const cartao = (e) => {
       const lista = em.filter((x) => x.ensaio_id === e.id).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
@@ -101,23 +105,23 @@
       return h('section.card.ensaio' + (e.data < hoje ? '.passado' : ''),
         h('div.card-topo',
           h('div', h('h2', util.dataLonga(e.data) + (e.hora ? ' · ' + e.hora : '')), e.local ? h('p.muted', '📍 ' + e.local) : null),
-          h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({
+          podeEnsaios ? h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({
             tabela: 'ensaios', titulo: 'Editar ensaio', campos: CAMPOS_ENSAIO, registro: e, depois: recarregar, nomeItem: 'este ensaio',
-          }) }, '✎ Editar')),
+          }) }, '✎ Editar') : null),
         e.observacoes ? h('p.obs', e.observacoes) : null,
         lista.length ? h('ol.setlist', lista.map((x, i) => {
           const mu = pmu[x.musica_id] || { titulo: '(música apagada)' };
           return h('li',
             h('button.link.setlist-nome', { type: 'button', onclick: () => pmu[x.musica_id] && verMusica(mu, recarregar) }, mu.titulo),
             mu.tom ? h('span.tom', mu.tom) : null,
-            h('span.setlist-acoes',
+            !podeSetlist ? null : h('span.setlist-acoes',
               h('button.btn-icone', { type: 'button', 'aria-label': 'Subir', disabled: i === 0, onclick: () => mover(i, -1) }, '↑'),
               h('button.btn-icone', { type: 'button', 'aria-label': 'Descer', disabled: i === lista.length - 1, onclick: () => mover(i, 1) }, '↓'),
               h('button.btn-icone', { type: 'button', 'aria-label': 'Tirar do ensaio', onclick: async () => {
                 await App.db.remove('ensaio_musicas', x.id); recarregar();
               } }, '✕')));
         })) : h('p.muted', 'Nenhuma música escolhida ainda.'),
-        h('button.btn.secundario.pequeno', { type: 'button', onclick: addMusica }, '+ Música'));
+        podeSetlist ? h('button.btn.secundario.pequeno', { type: 'button', onclick: addMusica }, '+ Música') : null);
     };
 
     el.appendChild(h('h2.secao-titulo', 'Próximos ensaios'));

@@ -54,10 +54,12 @@
         recarregar();
       };
 
+      const podeVender = App.posso('cantina_vendas');
+      const podeCardapio = App.posso('cantina_itens');
       grade.appendChild(h('section.card.caixa',
         h('div.card-topo', h('h2', '💰 Caixa'), inputDia),
-        h('p.muted', 'Toque no item a cada venda.'),
-        disponiveis.length
+        h('p.muted', podeVender ? 'Toque no item a cada venda.' : 'Só quem serve na cantina lança vendas. Aqui você vê o total do dia.'),
+        !podeVender ? null : disponiveis.length
           ? h('div.botoes-venda', disponiveis.map((i) => h('button.venda', { type: 'button', onclick: () => vender(i) },
             h('strong', i.nome), h('span', util.dinheiro(i.preco)))))
           : h('p.muted', 'Cadastre itens no cardápio para vender.'),
@@ -65,7 +67,7 @@
         Object.values(resumo).length ? h('ul.resumo-vendas', Object.values(resumo).map((r) => h('li',
           h('span', `${r.qtd}× ${r.nome}`),
           h('span.muted', util.dinheiro(r.qtd * r.valor)),
-          h('button.btn-icone', { type: 'button', 'aria-label': `Desfazer uma venda de ${r.nome}`, onclick: () => desfazer(r) }, '−')))) : null));
+          podeVender ? h('button.btn-icone', { type: 'button', 'aria-label': `Desfazer uma venda de ${r.nome}`, onclick: () => desfazer(r) }, '−') : h('span')))) : null));
 
       // ----- Coluna lateral: responsáveis + cardápio -----
       const lateral = h('div.coluna');
@@ -90,10 +92,11 @@
 
       lateral.appendChild(h('section.card',
         h('div.card-topo', h('h2', '📋 Cardápio'),
-          h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'cantina_itens', titulo: 'Novo item', campos: CAMPOS_ITEM, depois: recarregar }) }, '+ Item')),
+          podeCardapio ? h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'cantina_itens', titulo: 'Novo item', campos: CAMPOS_ITEM, depois: recarregar }) }, '+ Item') : null),
         itens.length ? h('ul.cardapio', itens.map((i) => h('li',
-          h('button.cardapio-item' + (i.disponivel === false ? '.indisponivel' : ''), { type: 'button',
-            onclick: () => App.editarRegistro({ tabela: 'cantina_itens', titulo: 'Editar item', campos: CAMPOS_ITEM, registro: i, depois: recarregar, nomeItem: i.nome }) },
+          h((podeCardapio ? 'button.cardapio-item' : 'div.cardapio-item.so-leitura') + (i.disponivel === false ? '.indisponivel' : ''),
+            podeCardapio ? { type: 'button',
+              onclick: () => App.editarRegistro({ tabela: 'cantina_itens', titulo: 'Editar item', campos: CAMPOS_ITEM, registro: i, depois: recarregar, nomeItem: i.nome }) } : null,
           h('span', i.nome, i.disponivel === false ? h('span.muted', ' (em falta)') : null),
           h('strong', util.dinheiro(i.preco)))))) : h('p.muted', 'Nenhum item cadastrado.')));
 

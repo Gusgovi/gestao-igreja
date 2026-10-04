@@ -29,7 +29,12 @@
         App.db.list('ministerios'),
       ]);
       const pmin = util.porId(ministerios);
-      const ministeriosDe = (id) => mm.filter((x) => x.membro_id === id).map((x) => pmin[x.ministerio_id]).filter(Boolean);
+      // ministérios em que a pessoa participa ou que lidera (líder antigo pode não estar na lista de participantes)
+      const ministeriosDe = (id) => {
+        const ids = new Set(mm.filter((x) => x.membro_id === id).map((x) => x.ministerio_id));
+        ministerios.filter((mi) => mi.lider_id === id).forEach((mi) => ids.add(mi.id));
+        return [...ids].map((i) => pmin[i]).filter(Boolean);
+      };
 
       const novo = () => App.editarRegistro({ tabela: 'membros', titulo: 'Novo membro', campos: CAMPOS, depois: recarregar });
       const editar = (m) => App.editarRegistro({
@@ -37,8 +42,9 @@
       });
 
       const ativos = membros.filter((m) => m.status === 'ativo').length;
+      const podeEditar = App.posso('membros');
       el.appendChild(App.cabecalho('Membros', `${membros.length} cadastrados · ${ativos} ativos`,
-        h('button.btn', { type: 'button', onclick: novo }, '+ Novo membro')));
+        podeEditar ? h('button.btn', { type: 'button', onclick: novo }, '+ Novo membro') : null));
 
       // Aniversariantes do mês
       const mes = new Date().getMonth() + 1;
@@ -63,7 +69,8 @@
         }
         for (const m of filtrados) {
           const mins = ministeriosDe(m.id);
-          lista.appendChild(h('button.item-card', { type: 'button', onclick: () => editar(m), 'aria-label': 'Editar ' + m.nome },
+          lista.appendChild(h(podeEditar ? 'button.item-card' : 'div.item-card.so-leitura',
+            podeEditar ? { type: 'button', onclick: () => editar(m), 'aria-label': 'Editar ' + m.nome } : null,
             App.avatar(m.nome),
             h('div.item-info',
               h('strong', m.nome),

@@ -28,7 +28,8 @@
     const campos = [
       ministerioFixo ? null : {
         nome: 'ministerio_id', rotulo: 'Ministério', tipo: 'select', obrigatorio: true,
-        opcoes: ministerios.map((m) => ({ valor: m.id, texto: m.nome })),
+        // só os ministérios que a pessoa pode escalar (admin: todos; líder: os que lidera)
+        opcoes: ministerios.filter((m) => App.posso('escalas', { ministerio_id: m.id })).map((m) => ({ valor: m.id, texto: m.nome })),
       },
       { nome: 'data', rotulo: 'Dia', tipo: 'date', obrigatorio: true },
       { nome: 'membro_id', rotulo: 'Pessoa', tipo: 'select', obrigatorio: true, opcoes: opcoesMembros(minInicial),
@@ -99,6 +100,12 @@
     };
 
     const ehEstaSemana = inicio === util.inicioSemana(util.hoje());
+    const perfil = App.perfil || {};
+    const podeEscalar = ministerioId
+      ? App.posso('escalas', { ministerio_id: ministerioId })
+      : perfil.papel === 'admin' || (perfil.lidera || []).length > 0;
+    // copiar a semana inteira de todos os ministérios só faz sentido para quem pode alterar todos
+    const podeCopiar = ministerioId ? podeEscalar : perfil.papel === 'admin';
     el.appendChild(h('div.semana-nav',
       h('button.btn.secundario', { type: 'button', onclick: () => mudarSemana(-7), 'aria-label': 'Semana anterior' }, '‹ Anterior'),
       h('div.semana-titulo',
@@ -108,8 +115,8 @@
       h('button.btn.secundario', { type: 'button', onclick: () => mudarSemana(7), 'aria-label': 'Próxima semana' }, 'Próxima ›')));
 
     el.appendChild(h('div.barra-acoes.nao-imprimir',
-      h('button.btn', { type: 'button', onclick: () => escalar({ ministerioFixo: ministerioId, data: ehEstaSemana ? util.hoje() : inicio, depois: aoMudar }) }, '+ Escalar pessoa'),
-      h('button.btn.secundario', { type: 'button', onclick: copiarAnterior }, '⧉ Copiar semana anterior'),
+      podeEscalar ? h('button.btn', { type: 'button', onclick: () => escalar({ ministerioFixo: ministerioId, data: ehEstaSemana ? util.hoje() : inicio, depois: aoMudar }) }, '+ Escalar pessoa') : null,
+      podeCopiar ? h('button.btn.secundario', { type: 'button', onclick: copiarAnterior }, '⧉ Copiar semana anterior') : null,
       h('button.btn.secundario', { type: 'button', onclick: () => window.print() }, '🖨 Imprimir')));
 
     const hoje = util.hoje();
@@ -121,12 +128,14 @@
       dias.appendChild(h('section.dia' + (doDia.length ? '' : '.vazio-dia') + (dia === hoje ? '.hoje' : ''),
         h('div.dia-topo',
           h('h3', util.diaSemana(dia), h('span.muted', ' ' + util.dataCurta(dia)), dia === hoje ? h('span.selo', 'Hoje') : null),
-          h('button.btn-icone.nao-imprimir', { type: 'button', 'aria-label': `Escalar alguém em ${util.dataLonga(dia)}`,
-            onclick: () => escalar({ ministerioFixo: ministerioId, data: dia, depois: aoMudar }) }, '+')),
+          podeEscalar ? h('button.btn-icone.nao-imprimir', { type: 'button', 'aria-label': `Escalar alguém em ${util.dataLonga(dia)}`,
+            onclick: () => escalar({ ministerioFixo: ministerioId, data: dia, depois: aoMudar }) }, '+') : null),
         doDia.length ? h('ul.escala-lista', doDia.map((e) => {
           const mi = pmin[e.ministerio_id] || {};
           const pessoa = pm[e.membro_id];
-          return h('li', h('button.escala-item', { type: 'button', onclick: () => escalar({ ministerioFixo: ministerioId, registro: e, depois: aoMudar }) },
+          const podeEditar = App.posso('escalas', { ministerio_id: e.ministerio_id });
+          return h('li', h(podeEditar ? 'button.escala-item' : 'div.escala-item.so-leitura',
+            podeEditar ? { type: 'button', onclick: () => escalar({ ministerioFixo: ministerioId, registro: e, depois: aoMudar }) } : null,
             ministerioId ? null : h('span.etiqueta', { style: { background: mi.cor || '#6b7280' } }, mi.nome || '—'),
             h('strong', pessoa ? pessoa.nome : 'A definir'),
             e.funcao ? h('span.muted', e.funcao) : null,

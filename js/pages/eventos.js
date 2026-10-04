@@ -21,13 +21,17 @@
       const hoje = util.hoje();
       const futuros = eventos.filter((e) => e.data >= hoje);
       const passados = eventos.filter((e) => e.data < hoje).reverse();
+      const podeEditar = App.posso('eventos');
 
       el.appendChild(App.cabecalho('Eventos e cultos', 'Os próximos eventos aparecem como stories na página inicial.',
         futuros.length ? h('button.btn.secundario', { type: 'button', onclick: () => App.abrirStories(futuros, 0) }, '▶ Ver stories') : null,
-        h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'eventos', titulo: 'Novo evento', campos: CAMPOS, depois: recarregar }) }, '+ Novo evento')));
+        podeEditar ? h('button.btn', { type: 'button', onclick: () => App.editarRegistro({ tabela: 'eventos', titulo: 'Novo evento', campos: CAMPOS, depois: recarregar }) }, '+ Novo evento') : null));
 
+      // quem não edita eventos abre o evento em tela cheia, igual aos stories
       const cartao = (ev) => h('button.evento-card', { type: 'button',
-        onclick: () => App.editarRegistro({ tabela: 'eventos', titulo: 'Editar evento', campos: CAMPOS, registro: ev, depois: recarregar, nomeItem: `"${ev.titulo}"` }) },
+        onclick: () => podeEditar
+          ? App.editarRegistro({ tabela: 'eventos', titulo: 'Editar evento', campos: CAMPOS, registro: ev, depois: recarregar, nomeItem: `"${ev.titulo}"` })
+          : App.abrirStories([ev], 0) },
         h('div.evento-data', h('strong', String(util.parse(ev.data).getDate())), h('span', util.dataCurta(ev.data).split(' ')[1])),
         h('div.item-info',
           h('strong', ev.titulo),

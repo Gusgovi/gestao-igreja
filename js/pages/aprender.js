@@ -25,10 +25,11 @@
       const info = SECOES.find((s) => s[0] === secao);
       const itens = todos.filter((c) => c.secao === secao);
 
+      const podeEditar = App.posso('conteudos');
       el.appendChild(App.cabecalho('Aprender', 'Conteúdo para quem está chegando na fé e na igreja.',
-        h('button.btn', { type: 'button', onclick: () => App.editarRegistro({
+        podeEditar ? h('button.btn', { type: 'button', onclick: () => App.editarRegistro({
           tabela: 'conteudos', titulo: 'Novo texto', campos: campos(), registro: null, depois: recarregar,
-        }) }, '+ Novo texto')));
+        }) }, '+ Novo texto') : null));
       el.appendChild(App.abas(SECOES.map(([v, t]) => [v, t]), secao, (v) => { secao = v; recarregar(); }));
       el.appendChild(h('p.subtitulo', info[2]));
 
@@ -37,9 +38,9 @@
         h('summary', h('span.artigo-num', String(i + 1)), c.titulo),
         h('div.artigo-corpo',
           (c.corpo || '').split(/\n\s*\n/).filter(Boolean).map((p) => h('p', p)),
-          h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({
+          podeEditar ? h('button.btn.secundario.pequeno', { type: 'button', onclick: () => App.editarRegistro({
             tabela: 'conteudos', titulo: 'Editar texto', campos: campos(), registro: c, depois: recarregar, nomeItem: `"${c.titulo}"`,
-          }) }, '✎ Editar'))))));
+          }) }, '✎ Editar') : null)))));
     },
   };
 })();

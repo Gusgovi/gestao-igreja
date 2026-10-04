@@ -18,8 +18,27 @@
   async function editar(registro, depois) {
     App.editarRegistro({
       tabela: 'ministerios', titulo: registro ? 'Editar ministério' : 'Novo ministério', campos: await campos(),
-      registro, depois, nomeItem: registro ? `o ministério ${registro.nome} (e as escalas dele)` : '',
+      registro, nomeItem: registro ? `o ministério ${registro.nome} (e as escalas dele)` : '',
+      depois: async (salvo) => {
+        if (salvo) await garantirLiderParticipante(salvo);
+        depois();
+      },
     });
+  }
+
+  // O líder também faz parte do ministério: entra na lista de participantes
+  // (é dela que saem a tag em Membros e as pessoas sugeridas na escala)
+  async function garantirLiderParticipante(ministerio) {
+    if (!ministerio.lider_id) return;
+    try {
+      const vinculos = await App.db.list('ministerio_membros', { eq: { ministerio_id: ministerio.id } });
+      if (!vinculos.some((x) => x.membro_id === ministerio.lider_id)) {
+        await App.db.insert('ministerio_membros', { ministerio_id: ministerio.id, membro_id: ministerio.lider_id });
+      }
+    } catch (e) {
+      console.error(e);
+      App.toast('Não deu para colocar o líder como participante. Adicione na lista de participantes.', 'aviso');
+    }
   }
 
   async function lista(el, recarregar) {
@@ -30,7 +49,7 @@
     ]);
     const pm = util.porId(membros);
     el.appendChild(App.cabecalho('Ministérios', 'Cada ministério tem um líder que monta a escala da semana.',
-      h('button.btn', { type: 'button', onclick: () => editar(null, recarregar) }, '+ Novo ministério')));
+      App.posso('ministerios') ? h('button.btn', { type: 'button', onclick: () => editar(null, recarregar) }, '+ Novo ministério') : null));
     if (!ministerios.length) return el.appendChild(App.vazio('Nenhum ministério cadastrado.'));
     el.appendChild(h('div.grade-cards', ministerios.map((m) => {
       const qtd = mm.filter((x) => x.ministerio_id === m.id).length;
@@ -55,10 +74,11 @@
 
     el.appendChild(h('a.voltar.nao-imprimir', { href: '#/ministerios' }, '‹ Ministérios'));
     el.appendChild(App.cabecalho(m.nome, lider ? `Líder: ${lider.nome}` : 'Sem líder definido',
-      h('button.btn.secundario.nao-imprimir', { type: 'button', onclick: () => editar(m, () => {
+      App.posso('ministerios') ? h('button.btn.secundario.nao-imprimir', { type: 'button', onclick: () => editar(m, () => {
         // se apagou, volta para a lista
         App.db.get('ministerios', id).then((ainda) => { if (ainda) recarregar(); else location.hash = '#/ministerios'; });
-      }) }, '✎ Editar')));
+      }) }, '✎ Editar') : null));
+    const podeParticipantes = App.posso('ministerio_membros', { ministerio_id: id });
 
     // Participantes
     const ids = new Set(mm.map((x) => x.membro_id));
@@ -86,12 +106,14 @@
 
     el.appendChild(h('section.card.nao-imprimir',
       h('div.card-topo', h('h2', `Participantes (${participantes.length})`),
-        h('button.btn.secundario.pequeno', { type: 'button', onclick: adicionar }, '+ Adicionar')),
+        podeParticipantes ? h('button.btn.secundario.pequeno', { type: 'button', onclick: adicionar }, '+ Adicionar') : null),
       participantes.length
         ? h('div.chips', participantes.map((p) => h('span.chip.grande',
           App.avatar(p.nome, m.cor), p.nome, p.id === m.lider_id ? h('span.selo', 'Líder') : null,
-          h('button.chip-x', { type: 'button', 'aria-label': `Tirar ${p.nome}`, onclick: () => remover(p) }, '✕'))))
-        : h('p.muted', 'Ninguém participa ainda. Adicione as pessoas para facilitar a montagem da escala.')));
+          podeParticipantes ? h('button.chip-x', { type: 'button', 'aria-label': `Tirar ${p.nome}`, onclick: () => remover(p) }, '✕') : null)))
+        : h('p.muted', podeParticipantes
+          ? 'Ninguém participa ainda. Adicione as pessoas para facilitar a montagem da escala.'
+          : 'Ninguém participa ainda.')));
 
     const secEscala = h('section.card', h('h2', '📅 Escala da semana'));
     el.appendChild(secEscala);

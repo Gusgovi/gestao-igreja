@@ -94,8 +94,8 @@
                   : { background: `linear-gradient(160deg, ${CORES[i % CORES.length]}, #0A1628)` },
               }, ev.imagem_url ? '' : util.dataCurta(ev.data))),
             h('span.story-titulo', ev.titulo)))
-          : h('p.muted', 'Nenhum evento futuro. Cadastre em "Eventos".'),
-        h('a.story.novo', { href: '#/eventos' }, h('span.story-anel.cinza', h('span.story-img.mais', '+')), h('span.story-titulo', 'Eventos')));
+          : h('p.muted', App.posso('eventos') ? 'Nenhum evento futuro. Cadastre em "Eventos".' : 'Nenhum evento futuro.'),
+        App.posso('eventos') ? h('a.story.novo', { href: '#/eventos' }, h('span.story-anel.cinza', h('span.story-img.mais', '+')), h('span.story-titulo', 'Eventos')) : null);
       el.appendChild(stories);
 
       const grade = h('div.grade-2');

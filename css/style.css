@@ -433,6 +433,12 @@ body::before {
 .venda { border-radius: 20px; }
 .total { border-radius: 20px; }
 .modal { border-radius: 28px; background: linear-gradient(160deg, var(--superficie-2), var(--superficie) 50%); }
+/* itens que a pessoa só pode ver (sem permissão de editar) */
+.so-leitura { cursor: default; }
+.so-leitura:hover { transform: none !important; }
+.item-card.so-leitura:hover { background: var(--superficie); border-color: rgba(255, 255, 255, .08); }
+.escala-item.so-leitura:hover { border-color: transparent; }
+.cardapio-item.so-leitura:hover { background: none; }
 .saudacao-data { color: var(--primaria); font-weight: 700; margin: 0 0 .4rem; }
 
 @media (max-width: 860px) {
