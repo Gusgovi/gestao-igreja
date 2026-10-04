@@ -38,6 +38,9 @@ create table if not exists public.membros (
   created_at timestamptz not null default now()
 );
 create index if not exists membros_email_idx on public.membros (lower(email));
+-- Cargo na igreja (opcional). Aparece como tag no cadastro do membro.
+alter table public.membros add column if not exists cargo text
+  check (cargo in ('Pastor', 'Pastora', 'Diaconisa'));
 
 -- ---------- Ministérios ----------
 create table if not exists public.ministerios (

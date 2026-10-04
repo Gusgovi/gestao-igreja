@@ -25,6 +25,11 @@
       email: u.normalizar(nome).replace(' ', '.') + '@email.com',
       data_nascimento: `199${i % 10}-0${(i % 9) + 1}-1${i % 9}`,
     }));
+    membros.push(
+      { id: id('mem'), nome: 'Sebastian Chuliver', cargo: 'Pastor', status: 'ativo', created_at: agora },
+      { id: id('mem'), nome: 'Romina Zaninovich', cargo: 'Pastora', status: 'ativo', created_at: agora },
+      { id: id('mem'), nome: 'Adriana', cargo: 'Diaconisa', status: 'ativo', created_at: agora },
+    );
     const m = (nome) => membros.find((x) => x.nome.startsWith(nome)).id;
 
     const ministerios = [
