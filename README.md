@@ -32,11 +32,29 @@ MVP para apresentação acadêmica, com arquitetura organizada para virar uso re
 ## Ligando o Supabase (banco de verdade)
 
 1. Crie uma conta e um projeto grátis em https://supabase.com
-2. No projeto: **SQL Editor > New query**, cole o conteúdo de `supabase/schema.sql` e clique em **Run**
-3. Em **Authentication > Users > Add user**, crie o login de quem vai usar o sistema (e-mail e senha)
-4. Em **Project Settings > API**, copie a *Project URL* e a chave *anon public*
-5. Cole as duas em `js/config.js`
-6. Abra o sistema de novo: vai aparecer a tela de login
+2. No projeto: **SQL Editor > New query**, cole o conteúdo de `supabase/schema.sql` e clique em **Run**. Depois faça o mesmo com `supabase/seed.sql` (cria os ministérios Louvor e Cantina e um cardápio de exemplo)
+3. Em **Authentication > Sign In / Providers**, desligue **Allow new users to sign up** (os logins são criados pela secretaria)
+4. Em **Authentication > Users > Add user**, crie o **seu** login primeiro (marque *Auto Confirm User*): o primeiro login vira **admin**
+5. Em **Project Settings > API Keys**, copie a *Project URL* e a *Publishable key* (nunca a *Secret key*)
+6. Cole as duas em `js/config.js`
+7. Abra o sistema de novo: vai aparecer a tela de login
+
+### Quem pode o quê
+
+| Papel | O que pode |
+|---|---|
+| **Admin** | Tudo: membros, ministérios, eventos, ensino, e todas as escalas |
+| **Líder** (quem está como líder de um ministério) | Participantes e escala do próprio ministério. Líder do *Louvor* também cuida de músicas e ensaios; líder da *Cantina*, do cardápio e do caixa |
+| **Membro** | Vê escalas, louvor, cantina e membros. Quem participa da Cantina lança vendas no caixa |
+| **Pendente** (login sem membro ligado) | Não vê nada |
+
+Para dar acesso a alguém: cadastre a pessoa em **Membros** com o e-mail dela e crie o login com o mesmo e-mail em *Authentication > Users*. O banco liga os dois sozinho. Para tornar alguém admin, no SQL Editor:
+
+```sql
+update perfis set papel = 'admin' where email = 'pessoa@email.com';
+```
+
+As regras ficam no próprio banco (RLS), então valem mesmo que alguém mexa no site. Os nomes **Louvor** e **Cantina** dos ministérios são usados pelas regras: não renomeie esses dois.
 
 > No modo Supabase o sistema começa vazio (os dados de exemplo são só do modo demonstração).
 
@@ -51,14 +69,14 @@ js/db.js              camada de dados (Supabase ou navegador) – as telas só u
 js/seed.js            dados de exemplo do modo demonstração
 js/app.js             menu, rotas e login
 js/pages/*.js         uma tela por arquivo
-supabase/schema.sql   tabelas e regras de segurança do banco
+supabase/schema.sql   tabelas, papéis e regras de segurança do banco
+supabase/seed.sql     ministérios Louvor e Cantina e cardápio inicial (opcional)
 ```
 
 Para criar uma tela nova: crie `js/pages/minha-tela.js` registrando `App.paginas['minha-tela'] = { titulo, render }`, inclua o `<script>` no `index.html` e um item no `MENU` em `js/app.js`.
 
 ## Próximos passos sugeridos
 
-- Permissões por papel (ex.: só o líder edita a escala do próprio ministério)
 - Upload de imagens dos eventos no Supabase Storage
 - Telas do briefing de UI/UX ainda não feitas: programação da semana, pregações, devocional do dia, pedido de oração, conheça os pastores
 - Publicar online (Netlify, Vercel ou GitHub Pages — é só subir a pasta)

@@ -3,12 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#5b21b6">
+  <meta name="theme-color" content="#0A1628">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Escalas, louvor, cantina e membros da igreja num só lugar.">
   <title>Gestão da Igreja</title>
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/landing.css">
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -16,12 +20,14 @@
   <div id="toasts" aria-live="polite"></div>
 
   <!-- Supabase (só é usado se js/config.js estiver preenchido) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
   <script src="js/config.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/icones.js"></script>
   <script src="js/seed.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/pages/landing.js"></script>
   <script src="js/pages/inicio.js"></script>
   <script src="js/pages/membros.js"></script>
   <script src="js/pages/escalas.js"></script>

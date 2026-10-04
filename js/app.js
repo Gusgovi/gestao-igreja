@@ -3,26 +3,30 @@
   const App = (window.App = window.App || {});
   const { h } = App;
 
+  // [rota, texto] — o ícone tem o mesmo nome da rota (js/icones.js)
   const MENU = [
-    ['inicio', 'Início', '🏠'],
-    ['membros', 'Membros', '👥'],
-    ['ministerios', 'Ministérios', '🤝'],
-    ['escalas', 'Escalas', '📅'],
-    ['louvor', 'Louvor', '🎵'],
-    ['cantina', 'Cantina', '☕'],
-    ['eventos', 'Eventos', '📣'],
-    ['aprender', 'Aprender', '📖'],
+    ['inicio', 'Início'],
+    ['membros', 'Membros'],
+    ['ministerios', 'Ministérios'],
+    ['escalas', 'Escalas'],
+    ['louvor', 'Louvor'],
+    ['cantina', 'Cantina'],
+    ['eventos', 'Eventos'],
+    ['aprender', 'Aprender'],
   ];
   const MENU_CELULAR = ['inicio', 'escalas', 'louvor', 'cantina'];
+  // Rotas que abrem fora do layout com menu
+  const ROTA_BEM_VINDO = 'bem-vindo';
+  const ROTA_LOGIN = 'entrar';
 
   function montarLayout() {
     const cfg = window.APP_CONFIG || {};
-    const link = ([rota, texto, icone]) =>
+    const link = ([rota, texto]) =>
       h('a.menu-link', { href: '#/' + rota, 'data-rota': rota },
-        h('span.menu-icone', { 'aria-hidden': 'true' }, icone), h('span', texto));
+        h('span.menu-icone', App.icone(rota)), h('span', texto));
 
     const lateral = h('nav.lateral', { 'aria-label': 'Menu principal' },
-      h('div.marca', h('span.marca-logo', { 'aria-hidden': 'true' }, '✝'), h('span', cfg.NOME_IGREJA || 'Igreja')),
+      h('a.marca', { href: '#/' + ROTA_BEM_VINDO, title: 'Página de boas-vindas' }, App.logoOnda('mini'), h('span', cfg.NOME_IGREJA || 'Igreja')),
       MENU.map(link),
       h('div.lateral-rodape',
         App.db.modo === 'local'
@@ -30,12 +34,12 @@
           : null,
         App.db.modo === 'local'
           ? h('button.btn.secundario.pequeno', { type: 'button', onclick: restaurarExemplo }, 'Restaurar dados de exemplo')
-          : h('button.btn.secundario.pequeno', { type: 'button', onclick: sair }, 'Sair')));
+          : h('button.btn.secundario.pequeno', { type: 'button', onclick: sair }, App.icone('sair'), 'Sair')));
 
     const inferior = h('nav.inferior', { 'aria-label': 'Atalhos' },
       MENU.filter(([r]) => MENU_CELULAR.includes(r)).map(link),
       h('button.menu-link', { type: 'button', onclick: () => document.body.classList.toggle('menu-aberto'), 'aria-label': 'Abrir menu completo' },
-        h('span.menu-icone', { 'aria-hidden': 'true' }, '☰'), h('span', 'Menu')));
+        h('span.menu-icone', App.icone('menu')), h('span', 'Menu')));
 
     const app = document.getElementById('app');
     app.innerHTML = '';
@@ -55,7 +59,7 @@
 
   async function sair() {
     await App.db.sair();
-    iniciar();
+    location.hash = '#/' + ROTA_BEM_VINDO;
   }
 
   async function rotear() {
@@ -94,22 +98,44 @@
       { nome: 'senha', rotulo: 'Senha', tipo: 'password', obrigatorio: true },
     ], {}, {
       textoSalvar: 'Entrar',
-      aoSalvar: async ({ email, senha }) => { await App.db.entrar(email, senha); iniciar(); },
+      aoSalvar: async ({ email, senha }) => {
+        await App.db.entrar(email, senha);
+        if (rotaAtual() === ROTA_LOGIN) location.hash = '#/inicio'; else iniciar();
+      },
     });
-    app.appendChild(h('div.login',
+    app.appendChild(h('main.login',
       h('div.login-caixa',
-        h('div.marca.grande', h('span.marca-logo', '✝'), h('span', cfg.NOME_IGREJA || 'Igreja')),
-        h('p', 'Entre com o e-mail e a senha cadastrados pela secretaria.'),
-        form)));
+        h('a.marca.grande', { href: '#/' + ROTA_BEM_VINDO }, App.logoOnda('mini'), h('span', cfg.NOME_IGREJA || 'Igreja')),
+        h('h1', 'Entrar'),
+        h('p.muted', 'Use o e-mail e a senha cadastrados pela secretaria.'),
+        form,
+        h('a.link.login-voltar', { href: '#/' + ROTA_BEM_VINDO }, 'Voltar para o início'))));
+    document.title = 'Entrar · ' + (cfg.NOME_IGREJA || 'Igreja');
   }
 
+  function rotaAtual() {
+    return location.hash.startsWith('#/') ? location.hash.slice(2).split('/')[0] : '';
+  }
+
+  // Sem rota (site recém-aberto) ou #/bem-vindo: página de boas-vindas.
+  // Sem login: tela de entrar. Com login (ou no modo demonstração): o sistema.
   async function iniciar() {
+    const rota = rotaAtual();
     const usuario = await App.db.usuario().catch(() => null);
+    if (!rota || rota === ROTA_BEM_VINDO) return App.telaBemVindo({ logado: !!usuario && App.db.modo !== 'local' });
     if (!usuario) return telaLogin();
+    if (rota === ROTA_LOGIN) { location.replace('#/inicio'); return; }
     montarLayout();
     rotear();
   }
 
-  window.addEventListener('hashchange', () => { if (document.getElementById('conteudo')) rotear(); });
+  window.addEventListener('hashchange', () => {
+    // Âncoras comuns (ex.: "Pular para o conteúdo") não são rotas
+    if (location.hash && !location.hash.startsWith('#/')) return;
+    const rota = rotaAtual();
+    const noSistema = document.querySelector('main#conteudo:not(.landing-main)');
+    if (noSistema && rota && rota !== ROTA_BEM_VINDO && rota !== ROTA_LOGIN) rotear();
+    else iniciar();
+  });
   document.addEventListener('DOMContentLoaded', iniciar);
 })();

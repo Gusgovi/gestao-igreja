@@ -87,6 +87,7 @@
     async resetar() { localStorage.removeItem(CHAVE); },
     // sem login no modo local
     async usuario() { return { email: 'demonstração' }; },
+    async perfil() { return { email: 'demonstração', papel: 'admin', membro_id: null, lidera: [], areas: [] }; },
     async entrar() { return true; },
     async sair() {},
   };
@@ -94,7 +95,20 @@
   // ---------- Modo Supabase ----------
   function criarSupabase() {
     const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
-    const ok = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
+    const SEM_PERMISSAO = 'Você não tem permissão para fazer isso. Fale com a secretaria ou com o líder do ministério.';
+    // Traduz os erros do banco para mensagens que o usuário entende
+    function traduzir(error) {
+      const msg = error.message || '';
+      if (error.code === '42501' || /row-level security|permission denied/i.test(msg)) return SEM_PERMISSAO;
+      if (error.code === 'PGRST116') return SEM_PERMISSAO; // editar uma linha que a regra esconde
+      if (error.code === '23505') return 'Este registro já existe.';
+      if (error.code === '23514' || error.code === '23502') return 'Confira os campos: algum valor obrigatório está vazio ou inválido.';
+      if (/Failed to fetch|NetworkError/i.test(msg)) return 'Sem conexão com a internet. Tente de novo em instantes.';
+      return msg;
+    }
+    const ok = ({ data, error }) => { if (error) { console.error(error); throw new Error(traduzir(error)); } return data; };
+    let perfilCache = null;
+    sb.auth.onAuthStateChange(() => { perfilCache = null; });
     return {
       modo: 'supabase',
       client: sb,
@@ -113,8 +127,31 @@
       async insert(tabela, obj) { return ok(await sb.from(tabela).insert(obj).select().single()); },
       async insertMany(tabela, objs) { return objs.length ? ok(await sb.from(tabela).insert(objs).select()) : []; },
       async update(tabela, id, obj) { return ok(await sb.from(tabela).update(obj).eq('id', id).select().single()); },
-      async remove(tabela, id) { ok(await sb.from(tabela).delete().eq('id', id)); },
+      async remove(tabela, id) {
+        // quando a regra não deixa apagar, o banco não dá erro: só não apaga nada
+        const apagados = ok(await sb.from(tabela).delete().eq('id', id).select('id'));
+        if (!apagados.length) throw new Error(SEM_PERMISSAO);
+      },
       async resetar() {},
+      // Quem está logado e o que pode fazer: { papel, membro_id, lidera: [ids], areas: ['louvor', ...] }
+      async perfil() {
+        if (perfilCache) return perfilCache;
+        const user = (await sb.auth.getUser()).data.user;
+        if (!user) return null;
+        const p = ok(await sb.from('perfis').select('papel, membro_id').eq('id', user.id).maybeSingle())
+          || { papel: 'pendente', membro_id: null };
+        const lideradas = p.membro_id
+          ? ok(await sb.from('ministerios').select('id, nome').eq('lider_id', p.membro_id))
+          : [];
+        perfilCache = {
+          email: user.email,
+          papel: p.papel,
+          membro_id: p.membro_id,
+          lidera: lideradas.map((m) => m.id),
+          areas: lideradas.map((m) => m.nome.toLowerCase()),
+        };
+        return perfilCache;
+      },
       async usuario() { const { data } = await sb.auth.getUser(); return data.user; },
       async entrar(email, senha) {
         const { error } = await sb.auth.signInWithPassword({ email, password: senha });
@@ -126,4 +163,22 @@
   }
 
   App.db = usarSupabase ? criarSupabase() : local;
+})();
+
+// Diz se o perfil logado pode alterar algo — espelha as regras do banco (supabase/schema.sql),
+// só para esconder botões. Quem garante a segurança de verdade é o banco.
+// Exemplos: App.pode(perfil, 'escalas', { ministerio_id }), App.pode(perfil, 'musicas')
+(function () {
+  const App = (window.App = window.App || {});
+  const AREA = {
+    musicas: 'louvor', ensaios: 'louvor', ensaio_musicas: 'louvor',
+    cantina_itens: 'cantina', cantina_vendas: 'cantina',
+  };
+  App.pode = function (perfil, tabela, registro = {}) {
+    if (!perfil || perfil.papel === 'pendente') return false;
+    if (perfil.papel === 'admin') return true;
+    if (tabela === 'escalas' || tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
+    if (AREA[tabela]) return perfil.areas.includes(AREA[tabela]);
+    return false; // membros, ministérios, eventos e conteúdos: só admin
+  };
 })();
