@@ -5,6 +5,7 @@
   App.paginas = App.paginas || {};
 
   const STATUS = [['ativo', 'Ativo'], ['visitante', 'Visitante'], ['inativo', 'Inativo']];
+  const CARGOS = ['Pastor', 'Pastora', 'Diaconisa'];
 
   const CAMPOS = [
     { nome: 'nome', rotulo: 'Nome completo', obrigatorio: true },
@@ -15,6 +16,8 @@
     { nome: 'endereco', rotulo: 'Endereço' },
     { nome: 'status', rotulo: 'Situação', tipo: 'select', vazio: false, padrao: 'ativo',
       opcoes: STATUS.map(([valor, texto]) => ({ valor, texto })) },
+    { nome: 'cargo', rotulo: 'Cargo', tipo: 'select', vazio: '— sem cargo —',
+      opcoes: CARGOS.map((c) => ({ valor: c, texto: c })) },
     { nome: 'observacoes', rotulo: 'Observações', tipo: 'textarea', linhas: 3 },
   ];
 
@@ -73,7 +76,7 @@
             podeEditar ? { type: 'button', onclick: () => editar(m), 'aria-label': 'Editar ' + m.nome } : null,
             App.avatar(m.nome),
             h('div.item-info',
-              h('strong', m.nome),
+              h('strong', m.nome, m.cargo ? h('span.cargo', m.cargo) : null),
               h('span.muted', m.telefone || m.email || 'Sem contato'),
               mins.length ? h('div.chips.mini', mins.map((mi) => h('span.etiqueta', { style: { background: mi.cor } }, mi.nome))) : null),
             h('span.status.' + m.status, (STATUS.find((s) => s[0] === m.status) || [, m.status])[1])));

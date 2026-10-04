@@ -439,6 +439,12 @@ body::before {
 .item-card.so-leitura:hover { background: var(--superficie); border-color: rgba(255, 255, 255, .08); }
 .escala-item.so-leitura:hover { border-color: transparent; }
 .cardapio-item.so-leitura:hover { background: none; }
+/* cargo do membro (Pastor, Pastora, Diaconisa): tag branca de destaque ao lado do nome */
+.cargo {
+  display: inline-block; margin-left: .45rem; vertical-align: .1em;
+  font-size: .72rem; font-weight: 700; padding: .1rem .55rem; border-radius: 999px;
+  background: var(--texto); color: var(--fundo);
+}
 .saudacao-data { color: var(--primaria); font-weight: 700; margin: 0 0 .4rem; }
 
 @media (max-width: 860px) {
