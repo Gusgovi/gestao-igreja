@@ -13,6 +13,7 @@
     ['cantina', 'Cantina'],
     ['eventos', 'Eventos'],
     ['aprender', 'Aprender'],
+    ['ajuda', 'Ajuda'],
   ];
   const MENU_CELULAR = ['inicio', 'escalas', 'louvor', 'cantina'];
   // Rotas que abrem fora do layout com menu

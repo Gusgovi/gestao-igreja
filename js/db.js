@@ -133,7 +133,8 @@
         if (!apagados.length) throw new Error(SEM_PERMISSAO);
       },
       async resetar() {},
-      // Quem está logado e o que pode fazer: { papel, membro_id, lidera: [ids], areas: ['louvor', ...] }
+      // Quem está logado e o que pode fazer:
+      // { papel, membro_id, lidera: [ids], areas: ['louvor', ...] (que lidera), participa: ['cantina', ...] }
       async perfil() {
         if (perfilCache) return perfilCache;
         const user = (await sb.auth.getUser()).data.user;
@@ -143,12 +144,19 @@
         const lideradas = p.membro_id
           ? ok(await sb.from('ministerios').select('id, nome').eq('lider_id', p.membro_id))
           : [];
+        const vinculos = p.membro_id
+          ? ok(await sb.from('ministerio_membros').select('ministerio_id').eq('membro_id', p.membro_id))
+          : [];
+        const participadas = vinculos.length
+          ? ok(await sb.from('ministerios').select('nome').in('id', vinculos.map((v) => v.ministerio_id)))
+          : [];
         perfilCache = {
           email: user.email,
           papel: p.papel,
           membro_id: p.membro_id,
           lidera: lideradas.map((m) => m.id),
           areas: lideradas.map((m) => m.nome.toLowerCase()),
+          participa: participadas.map((m) => m.nome.toLowerCase()),
         };
         return perfilCache;
       },
@@ -178,6 +186,8 @@
     if (!perfil || perfil.papel === 'pendente') return false;
     if (perfil.papel === 'admin') return true;
     if (tabela === 'escalas' || tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
+    // quem participa da Cantina (não só o líder) lança vendas no caixa
+    if (tabela === 'cantina_vendas' && (perfil.participa || []).includes('cantina')) return true;
     if (AREA[tabela]) return perfil.areas.includes(AREA[tabela]);
     return false; // membros, ministérios, eventos e conteúdos: só admin
   };
