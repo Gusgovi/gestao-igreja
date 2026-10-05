@@ -555,3 +555,6 @@ body::before {
 .pastor-texto .cargo { margin-left: 0; }
 .pastor-texto h3 { margin: .45rem 0 .5rem; font-size: 1.35rem; }
 .pastor-texto p { color: var(--texto-suave); margin: 0 0 .7rem; }
+/* Mídia e Som lado a lado, mesma largura e mesma altura */
+.quem-serve { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1.25rem; align-items: stretch; }
+.quem-serve > section.card + section.card { margin-top: 0; }

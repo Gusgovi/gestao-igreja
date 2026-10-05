@@ -148,7 +148,7 @@
           : h('p.muted', 'Ninguém escalado ainda.'));
     }));
     el.appendChild(h('h2.secao-titulo', 'Quem serve em quê'));
-    el.appendChild(h('div.grade-2', cards));
+    el.appendChild(h('div.quem-serve', cards));
   }
 
   App.paginas.midia = {
