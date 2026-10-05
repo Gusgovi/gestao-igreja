@@ -103,7 +103,7 @@
     const perfil = App.perfil || {};
     const podeEscalar = ministerioId
       ? App.posso('escalas', { ministerio_id: ministerioId })
-      : perfil.papel === 'admin' || (perfil.lidera || []).length > 0;
+      : perfil.papel === 'admin' || (perfil.lidera || []).length > 0 || (perfil.escala || []).length > 0;
     // copiar a semana inteira de todos os ministérios só faz sentido para quem pode alterar todos
     const podeCopiar = ministerioId ? podeEscalar : perfil.papel === 'admin';
     el.appendChild(h('div.semana-nav',

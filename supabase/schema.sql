@@ -6,12 +6,15 @@
 -- e recria as regras de segurança.
 --
 -- Papéis:
---   admin     – secretaria/pastores: cadastra e edita tudo.
+--   admin     – secretaria e pastores: cadastra e edita tudo. Membro com
+--               cargo Pastor ou Pastora vira admin sozinho ao ligar o login.
 --   líder     – não é um papel gravado: é quem está como líder de um
 --               ministério (ministerios.lider_id). Edita os participantes
 --               e a escala do próprio ministério. O líder do ministério
 --               "Louvor" cuida também de músicas e ensaios; o da
 --               "Cantina", do cardápio e do caixa.
+--               Quem PARTICIPA do Louvor (não só o líder) também cadastra
+--               músicas, marca ensaios e monta a escala do Louvor.
 --   membro    – vê as informações internas (escalas, louvor, cantina...).
 --               Quem participa da Cantina também registra vendas; quem
 --               participa da Mídia envia as fotos do culto.
@@ -271,6 +274,15 @@ returns boolean language sql stable security definer set search_path = '' as $$
   );
 $$;
 
+-- pode montar a escala deste ministério: o líder (ou admin) e, no Louvor, quem participa
+create or replace function private.pode_escalar(p_ministerio uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select private.lidera(p_ministerio) or (
+    exists (select 1 from public.ministerios m where m.id = p_ministerio and lower(m.nome) = 'louvor')
+    and private.participa_area('louvor')
+  );
+$$;
+
 revoke execute on all functions in schema private from public, anon;
 grant execute on all functions in schema private to authenticated;
 
@@ -298,24 +310,32 @@ drop trigger if exists ao_criar_login on auth.users;
 create trigger ao_criar_login after insert on auth.users
   for each row execute function private.criar_perfil();
 
--- Quando um membro é cadastrado/alterado com o e-mail de um login que ainda não tem membro
+-- Quando um membro é cadastrado/alterado com o e-mail de um login que ainda não tem membro.
+-- Pastor e Pastora (campo cargo) têm acesso de admin: quando o membro tem esse cargo,
+-- o login ligado a ele vira admin (só o admin consegue alterar o cargo de alguém).
 create or replace function private.ligar_membro_ao_login()
 returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_pastor boolean := coalesce(new.cargo in ('Pastor', 'Pastora'), false);
 begin
   if new.email is not null and not exists (select 1 from public.perfis where membro_id = new.id) then
     update public.perfis
        set membro_id = new.id,
-           papel = case when papel in ('pendente', 'visitante') then 'membro' else papel end
+           papel = case when v_pastor then 'admin'
+                        when papel in ('pendente', 'visitante') then 'membro' else papel end
      where id = (select p.id from public.perfis p
                   where p.membro_id is null and lower(p.email) = lower(new.email)
                   order by p.created_at limit 1);
+  elsif v_pastor then
+    -- já tinha login ligado e ganhou o cargo de pastor depois
+    update public.perfis set papel = 'admin' where membro_id = new.id and papel <> 'admin';
   end if;
   return new;
 end;
 $$;
 
 drop trigger if exists ao_salvar_membro on public.membros;
-create trigger ao_salvar_membro after insert or update of email on public.membros
+create trigger ao_salvar_membro after insert or update of email, cargo on public.membros
   for each row execute function private.ligar_membro_ao_login();
 
 -- Logins que já existiam antes deste script ganham perfil agora
@@ -367,10 +387,10 @@ begin
       ('membros',            '(select private.tem_acesso())',      '(select private.eh_admin())'),
       ('ministerios',        '(select private.tem_acesso())',      '(select private.eh_admin())'),
       ('ministerio_membros', '(select private.tem_acesso())',      'private.lidera(ministerio_id)'),
-      ('escalas',            '(select private.tem_acesso())',      'private.lidera(ministerio_id)'),
-      ('musicas',            '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
-      ('ensaios',            '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
-      ('ensaio_musicas',     '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
+      ('escalas',            '(select private.tem_acesso())',      'private.pode_escalar(ministerio_id)'),
+      ('musicas',            '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
+      ('ensaios',            '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
+      ('ensaio_musicas',     '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
       ('cantina_itens',      '(select private.logado())',          '(select private.lidera_area(''cantina''))'),
       ('cantina_vendas',     '(select private.tem_acesso())',      '(select private.lidera_area(''cantina''))'),
       ('eventos',            'true',                               '(select private.eh_admin())'),

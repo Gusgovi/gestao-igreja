@@ -10,6 +10,8 @@
   const VISITANTE_OU_ADMIN = (p) => App.ehVisitante(p) || p.papel === 'admin';
   const ADMIN = (p) => p.papel === 'admin';
   const LIDER = (p) => p.papel === 'admin' || (p.lidera || []).length > 0;
+  // quem participa do Louvor também monta a escala do Louvor
+  const ESCALA = (p) => LIDER(p) || (p.escala || []).length > 0;
   const tabela = (t) => () => App.posso(t);
 
   // [id, pergunta, rótulo de quem pode, quem pode, link da tela, passos]. **texto** vira negrito.
@@ -55,14 +57,14 @@
       'O total do dia vai somando sozinho, embaixo dos botões.',
       'Errou? Toque no **−** ao lado do item no resumo para desfazer uma venda.',
     ]],
-    ['escalar', 'Escalar alguém', 'Líderes', LIDER, 'escalas', [
+    ['escalar', 'Escalar alguém', 'Líderes e Louvor', ESCALA, 'escalas', [
       'Abra **Escalas** (ou entre no seu ministério, em **Ministérios**).',
       'Toque em **+ Escalar pessoa**, ou no **+** ao lado do dia.',
       'Escolha o dia, a pessoa e, se quiser, a função (ex.: Vocal, Porta principal, Caixa). Toque em **Salvar**.',
       'Para mudar ou tirar alguém, toque no nome da pessoa no dia.',
-      'Líder só escala no próprio ministério.',
+      'Líder só escala no próprio ministério. Quem participa do **Louvor** também escala no Louvor.',
     ]],
-    ['copiar-semana', 'Repetir a escala da semana passada', 'Líderes', LIDER, 'ministerios', [
+    ['copiar-semana', 'Repetir a escala da semana passada', 'Líderes e Louvor', ESCALA, 'ministerios', [
       'Entre no seu ministério em **Ministérios**, ou abra **Escalas** se você for admin.',
       'Vá para a semana que quer preencher e toque em **⧉ Copiar semana anterior**.',
       'Confira os nomes e ajuste quem não puder servir.',
@@ -91,6 +93,7 @@
     ['membro', 'Cadastrar um membro', 'Admin', ADMIN, 'membros', [
       'Abra **Membros** e toque em **+ Novo membro**.',
       'Só o nome é obrigatório. Coloque o **e-mail** se a pessoa for ter login.',
+      'O cargo **Pastor** ou **Pastora** dá acesso de admin quando a pessoa tem login.',
       'Para mudar depois, toque no nome da pessoa na lista.',
     ]],
     ['lider', 'Escolher o líder de um ministério', 'Admin', ADMIN, 'ministerios', [
@@ -117,6 +120,7 @@
       'A pessoa cria a conta sozinha em **Sou visitante, quero me cadastrar** (ou você cria no Supabase, em **Authentication › Users › Add user**).',
       'Abra **Membros**, toque na pessoa (ou em **+ Novo membro**) e coloque **o mesmo e-mail** da conta.',
       'Toque em **Salvar**. Pronto: a conta deixa de ser visitante e vira membro.',
+      'Se for pastor, escolha **Pastor** ou **Pastora** no campo **Cargo**: a conta vira **admin** sozinha.',
       'Por segurança, a conta só vira membro quando a secretaria salva o cadastro. Digitar o e-mail de outra pessoa não dá acesso.',
     ]],
     ['admin', 'Tornar alguém admin', 'Admin', ADMIN, null, [

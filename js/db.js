@@ -156,7 +156,8 @@
         if (error) console.error(error); // a linha da tabela já foi apagada; o arquivo sobra, sem problema
       },
       // Quem está logado e o que pode fazer:
-      // { papel, membro_id, lidera: [ids], areas: ['louvor', ...] (que lidera), participa: ['cantina', ...] }
+      // { papel, membro_id, lidera: [ids], areas: ['louvor', ...] (que lidera), participa: ['cantina', ...],
+      //   escala: [ids] (ministérios cuja escala pode montar sem ser líder: o Louvor, para quem participa dele) }
       async perfil() {
         if (perfilCache) return perfilCache;
         const user = (await sb.auth.getUser()).data.user;
@@ -172,7 +173,7 @@
           ? ok(await sb.from('ministerio_membros').select('ministerio_id').eq('membro_id', p.membro_id))
           : [];
         const participadas = vinculos.length
-          ? ok(await sb.from('ministerios').select('nome').in('id', vinculos.map((v) => v.ministerio_id)))
+          ? ok(await sb.from('ministerios').select('id, nome').in('id', vinculos.map((v) => v.ministerio_id)))
           : [];
         perfilCache = {
           email: user.email,
@@ -182,6 +183,7 @@
           lidera: lideradas.map((m) => m.id),
           areas: lideradas.map((m) => m.nome.toLowerCase()),
           participa: participadas.map((m) => m.nome.toLowerCase()),
+          escala: participadas.filter((m) => m.nome.toLowerCase() === 'louvor').map((m) => m.id),
         };
         return perfilCache;
       },
@@ -226,7 +228,11 @@
   App.pode = function (perfil, tabela, registro = {}) {
     if (!perfil || perfil.papel === 'pendente' || perfil.papel === 'visitante') return false;
     if (perfil.papel === 'admin') return true;
-    if (tabela === 'escalas' || tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
+    if (tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
+    // quem participa do Louvor também monta a escala do Louvor
+    if (tabela === 'escalas') return [...perfil.lidera, ...(perfil.escala || [])].includes(registro.ministerio_id);
+    // quem participa do Louvor (não só o líder) cadastra músicas e marca ensaios
+    if (AREA[tabela] === 'louvor' && (perfil.participa || []).includes('louvor')) return true;
     // quem participa da Cantina (não só o líder) lança vendas no caixa
     if (tabela === 'cantina_vendas' && (perfil.participa || []).includes('cantina')) return true;
     // quem participa da Mídia (não só o líder) envia e apaga as fotos do culto
