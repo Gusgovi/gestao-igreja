@@ -85,6 +85,17 @@
       this._gravar(d);
     },
     async resetar() { localStorage.removeItem(CHAVE); },
+    // Fotos da Mídia: no modo local a imagem fica guardada no próprio navegador
+    async enviarFoto(blob) {
+      const url = await new Promise((ok, erro) => {
+        const r = new FileReader();
+        r.onload = () => ok(r.result);
+        r.onerror = () => erro(new Error('Não deu para ler a foto.'));
+        r.readAsDataURL(blob);
+      });
+      return { caminho: 'local/' + novoId(), url };
+    },
+    async apagarFoto() {},
     // sem login no modo local
     async usuario() { return { email: 'demonstração' }; },
     async perfil() { return { email: 'demonstração', papel: 'admin', membro_id: null, lidera: [], areas: [] }; },
@@ -133,14 +144,27 @@
         if (!apagados.length) throw new Error(SEM_PERMISSAO);
       },
       async resetar() {},
+      // Fotos da Mídia ficam no Storage (bucket "midia"); a tabela guarda o endereço
+      async enviarFoto(blob, pasta) {
+        const caminho = `${pasta}/${novoId()}.jpg`;
+        const { error } = await sb.storage.from('midia').upload(caminho, blob, { contentType: blob.type || 'image/jpeg' });
+        if (error) { console.error(error); throw new Error(/row-level|policy|unauthorized/i.test(error.message) ? SEM_PERMISSAO : error.message); }
+        return { caminho, url: sb.storage.from('midia').getPublicUrl(caminho).data.publicUrl };
+      },
+      async apagarFoto(caminho) {
+        const { error } = await sb.storage.from('midia').remove([caminho]);
+        if (error) console.error(error); // a linha da tabela já foi apagada; o arquivo sobra, sem problema
+      },
       // Quem está logado e o que pode fazer:
       // { papel, membro_id, lidera: [ids], areas: ['louvor', ...] (que lidera), participa: ['cantina', ...] }
       async perfil() {
         if (perfilCache) return perfilCache;
         const user = (await sb.auth.getUser()).data.user;
         if (!user) return null;
-        const p = ok(await sb.from('perfis').select('papel, membro_id').eq('id', user.id).maybeSingle())
-          || { papel: 'pendente', membro_id: null };
+        const p = ok(await sb.from('perfis').select('papel, membro_id, nome').eq('id', user.id).maybeSingle())
+          || { papel: 'visitante', membro_id: null };
+        // "pendente" é o nome antigo de quem tem login mas não é membro
+        if (p.papel === 'pendente') p.papel = 'visitante';
         const lideradas = p.membro_id
           ? ok(await sb.from('ministerios').select('id, nome').eq('lider_id', p.membro_id))
           : [];
@@ -152,6 +176,7 @@
           : [];
         perfilCache = {
           email: user.email,
+          nome: p.nome || (user.user_metadata || {}).nome || '',
           papel: p.papel,
           membro_id: p.membro_id,
           lidera: lideradas.map((m) => m.id),
@@ -167,6 +192,22 @@
         return true;
       },
       async sair() { await sb.auth.signOut(); },
+      // Cadastro de visitante. Devolve true se já entrou, false se precisa confirmar o e-mail.
+      async cadastrar(nome, email, senha) {
+        // o link do e-mail de confirmação (se estiver ligado no Supabase) volta para este mesmo site
+        const voltar = /^https?:/.test(location.protocol) ? location.origin + location.pathname : undefined;
+        const { data, error } = await sb.auth.signUp({ email, password: senha, options: { data: { nome }, emailRedirectTo: voltar } });
+        if (error) {
+          console.error(error);
+          if (/signups? not allowed|disabled/i.test(error.message)) throw new Error('O cadastro de visitantes ainda não foi liberado. Fale com a secretaria.');
+          if (/already registered|already exists/i.test(error.message)) throw new Error('Este e-mail já tem cadastro. Use "Entrar".');
+          if (/password/i.test(error.message)) throw new Error('A senha precisa ter pelo menos 6 letras ou números.');
+          if (/rate limit/i.test(error.message)) throw new Error('Muitos cadastros em pouco tempo. Tente de novo daqui a pouco.');
+          throw new Error(error.message);
+        }
+        // com "confirmar e-mail" ligado no Supabase, não vem sessão: a pessoa precisa abrir o e-mail
+        return !!data.session;
+      },
     };
   }
 
@@ -183,12 +224,16 @@
     cantina_itens: 'cantina', cantina_vendas: 'cantina',
   };
   App.pode = function (perfil, tabela, registro = {}) {
-    if (!perfil || perfil.papel === 'pendente') return false;
+    if (!perfil || perfil.papel === 'pendente' || perfil.papel === 'visitante') return false;
     if (perfil.papel === 'admin') return true;
     if (tabela === 'escalas' || tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
     // quem participa da Cantina (não só o líder) lança vendas no caixa
     if (tabela === 'cantina_vendas' && (perfil.participa || []).includes('cantina')) return true;
+    // quem participa da Mídia (não só o líder) envia e apaga as fotos do culto
+    if (tabela === 'midia_fotos') return [...perfil.areas, ...(perfil.participa || [])].some((a) => App.util.normalizar(a) === 'midia');
     if (AREA[tabela]) return perfil.areas.includes(AREA[tabela]);
-    return false; // membros, ministérios, eventos e conteúdos: só admin
+    return false; // membros, ministérios, eventos, conteúdos e pastores: só admin
   };
+  // Visitante (criou a conta sozinho, ainda não é membro): não vê escalas, membros, louvor nem o caixa
+  App.ehVisitante = (perfil) => !!perfil && (perfil.papel === 'visitante' || perfil.papel === 'pendente');
 })();

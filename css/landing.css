@@ -262,3 +262,4 @@ main.landing-main { margin: 0; padding: 0; max-width: none; flex: 1; }
   .faixa-trilho, .hero-onda path { animation: none !important; }
   .palavra { color: var(--texto); }
 }
+.hero-nota a { color: var(--texto); font-weight: 700; }

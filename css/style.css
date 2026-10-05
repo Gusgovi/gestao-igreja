@@ -524,3 +524,34 @@ body::before {
 .ajuda-fotos.pc .ajuda-explica { order: -1; }
 .ajuda-fotos.pc .ajuda-tela { border-radius: 14px; }
 .ajuda-fotos.pc .ajuda-marca { border-radius: 10px; }
+
+/* ---------- Cadastro de visitante ---------- */
+.login-visitante { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--borda); }
+.login-visitante p { margin: 0 0 .6rem; color: var(--texto-suave); }
+.login-visitante .btn { width: 100%; }
+.login-nota { margin-top: 1rem; font-size: .9rem; }
+
+/* ---------- Mídia: galeria de fotos ---------- */
+.galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 45%), 1fr)); gap: .6rem; margin-top: .75rem; }
+.galeria-foto { padding: 0; border: 0; border-radius: var(--raio-p); overflow: hidden; aspect-ratio: 1; background: var(--superficie-2); cursor: pointer; }
+.galeria-foto img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s; }
+.galeria-foto:hover img, .galeria-foto:focus-visible img { transform: scale(1.04); }
+.passados > .card { margin-top: .75rem; }
+.passados > .card h3 { margin: 0; }
+.foto-palco { background: #000; border-radius: var(--raio-p); display: grid; place-items: center; min-height: 200px; }
+.foto-grande { max-width: 100%; max-height: 62vh; object-fit: contain; display: block; }
+.foto-legenda { margin: .75rem 0 .25rem; font-weight: 700; }
+.foto-nav { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: .5rem 0 1rem; }
+
+/* ---------- Conheça os pastores ---------- */
+.pastores { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 1.25rem; }
+.pastor-card { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; display: flex; flex-direction: column; }
+.pastor-foto { aspect-ratio: 4 / 3; background: center 25% / cover no-repeat var(--superficie-2); }
+.pastor-foto.sem-foto {
+  display: grid; place-items: center; font-family: var(--fonte-titulo, inherit); font-size: 4rem; font-weight: 800;
+  color: var(--texto); background: radial-gradient(120% 90% at 80% 0%, #2D9CDB, var(--superficie) 70%);
+}
+.pastor-texto { padding: 1.1rem 1.3rem 1.3rem; }
+.pastor-texto .cargo { margin-left: 0; }
+.pastor-texto h3 { margin: .45rem 0 .5rem; font-size: 1.35rem; }
+.pastor-texto p { color: var(--texto-suave); margin: 0 0 .7rem; }

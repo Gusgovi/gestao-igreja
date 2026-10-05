@@ -6,6 +6,8 @@
 
   // Quem pode cada tarefa (mesmas regras de App.pode, que esconde os botões nas telas)
   const TODOS = () => true;
+  const MEMBRO = (p) => !App.ehVisitante(p);
+  const VISITANTE_OU_ADMIN = (p) => App.ehVisitante(p) || p.papel === 'admin';
   const ADMIN = (p) => p.papel === 'admin';
   const LIDER = (p) => p.papel === 'admin' || (p.lidera || []).length > 0;
   const tabela = (t) => () => App.posso(t);
@@ -17,13 +19,18 @@
       'No celular, o menu fica embaixo (Início, Escalas, Louvor, Cantina). Toque em **Menu** para ver todas as telas.',
       'Para sair, abra o menu e toque em **Sair**, no fim da lista.',
     ]],
-    ['ver-escala', 'Ver quando eu sirvo', 'Todos', TODOS, 'escalas', [
+    ['visitante', 'Criar conta de visitante', 'Visitantes', VISITANTE_OU_ADMIN, null, [
+      'Na página de boas-vindas, toque em **Entrar** e depois em **Sou visitante, quero me cadastrar**.',
+      'Escreva seu nome, seu e-mail e crie uma senha. Toque em **Criar minha conta**.',
+      'O visitante vê os eventos, o cardápio da cantina, as fotos dos cultos, a área Aprender e os pastores. As escalas ficam só para os membros.',
+    ]],
+    ['ver-escala', 'Ver quando eu sirvo', 'Membros', MEMBRO, 'escalas', [
       'Abra **Escalas**. Aparece a semana atual, dia por dia, com o nome de quem serve e a função.',
       'Use as abas no topo para ver só um ministério.',
       'Toque em **Próxima ›** para ver a semana seguinte, e em **Voltar para hoje** para voltar.',
       'A tela **Início** também mostra as escalas desta semana.',
     ]],
-    ['ver-musica', 'Ver a letra, o tom e o próximo ensaio', 'Todos', TODOS, 'louvor', [
+    ['ver-musica', 'Ver a letra, o tom e o próximo ensaio', 'Membros', MEMBRO, 'louvor', [
       'Abra **Louvor**. Na aba **Ensaios** aparecem os próximos ensaios com as músicas na ordem.',
       'Toque no nome de uma música para ver a letra, o tom e o link do YouTube ou da cifra.',
       'Na aba **Músicas** fica o repertório inteiro. Use a busca para achar pelo nome ou artista.',
@@ -31,6 +38,17 @@
     ['ver-eventos', 'Ver os próximos eventos', 'Todos', TODOS, 'inicio', [
       'Na tela **Início**, os eventos aparecem em bolinhas no topo, igual aos stories do Instagram.',
       'Toque em uma bolinha para abrir. Toque nos lados da tela para passar para o próximo.',
+    ]],
+    ['ver-fotos', 'Ver as fotos do último culto', 'Todos', TODOS, 'midia', [
+      'Abra **Mídia** no menu. As fotos do último culto aparecem primeiro.',
+      'Toque em uma foto para ver grande. Use **Próxima ›** para passar.',
+      'As fotos dos cultos anteriores ficam em **Cultos anteriores**, mais embaixo.',
+    ]],
+    ['fotos', 'Enviar as fotos do culto', 'Mídia', tabela('midia_fotos'), 'midia', [
+      'Abra **Mídia** e toque em **+ Enviar fotos**.',
+      'Confira o **dia do culto** (já vem o último domingo) e, se quiser, escreva uma legenda.',
+      'Toque em **Fotos**, escolha uma ou várias fotos e toque em **Enviar**. Espere terminar.',
+      'Para apagar uma foto, toque nela e depois em **Apagar**.',
     ]],
     ['vender', 'Lançar uma venda na cantina', 'Cantina', tabela('cantina_vendas'), 'cantina', [
       'Abra **Cantina**. No quadro **Caixa**, toque no item **a cada venda**.',
@@ -79,7 +97,7 @@
       'Abra **Ministérios** e toque no ministério.',
       'Toque em **✎ Editar**, escolha a pessoa no campo **Líder** e toque em **Salvar**.',
       'O líder só consegue editar se tiver login com o mesmo e-mail do cadastro de membro.',
-      'Não mude o nome dos ministérios **Louvor** e **Cantina**: o sistema usa esses nomes.',
+      'Não mude o nome dos ministérios **Louvor**, **Cantina** e **Mídia**: o sistema usa esses nomes.',
     ]],
     ['evento', 'Criar um evento (story)', 'Admin', ADMIN, 'eventos', [
       'Abra **Eventos** e toque em **+ Novo evento**.',
@@ -90,11 +108,16 @@
       'Abra **Aprender** e toque em **+ Novo texto**.',
       'Escolha a seção, escreva o título e o texto. Deixe uma linha em branco entre os parágrafos.',
     ]],
-    ['login', 'Dar acesso ao site para alguém', 'Admin', ADMIN, null, [
-      'Cadastre a pessoa em **Membros** com o e-mail dela.',
-      'No painel do Supabase, vá em **Authentication › Users › Add user › Create new user**.',
-      'Use **o mesmo e-mail**, crie uma senha, marque **Auto Confirm User** e toque em **Create user**.',
-      'Passe o e-mail e a senha para a pessoa. Ela já entra como membro.',
+    ['pastores', 'Mudar o texto e a foto dos pastores', 'Admin', ADMIN, 'pastores', [
+      'Abra **Pastores** no menu.',
+      'Toque em **✎ Editar** no cartão do pastor. Cole o link da foto e escreva o texto.',
+      'Esses cartões aparecem também na página de boas-vindas, para quem ainda não entrou.',
+    ]],
+    ['login', 'Dar acesso de membro para alguém', 'Admin', ADMIN, null, [
+      'A pessoa cria a conta sozinha em **Sou visitante, quero me cadastrar** (ou você cria no Supabase, em **Authentication › Users › Add user**).',
+      'Abra **Membros**, toque na pessoa (ou em **+ Novo membro**) e coloque **o mesmo e-mail** da conta.',
+      'Toque em **Salvar**. Pronto: a conta deixa de ser visitante e vira membro.',
+      'Por segurança, a conta só vira membro quando a secretaria salva o cadastro. Digitar o e-mail de outra pessoa não dá acesso.',
     ]],
     ['admin', 'Tornar alguém admin', 'Admin', ADMIN, null, [
       'A pessoa precisa já ter login (veja "Dar acesso ao site para alguém").',
@@ -257,8 +280,8 @@
   const DUVIDAS = [
     ['Não aparece o botão para mudar alguma coisa.',
       'Cada pessoa só vê os botões do que pode alterar. Se precisar mudar algo, fale com o líder do ministério ou com a secretaria.'],
-    ['Entrei, mas não aparece nada.',
-      'Seu login ainda não está ligado ao seu cadastro. Peça para a secretaria conferir se o e-mail do cadastro é igual ao do login.'],
+    ['Entrei, mas não vejo as escalas.',
+      'Sua conta ainda é de visitante. Peça para a secretaria colocar o mesmo e-mail da sua conta no seu cadastro de membro e salvar.'],
     ['Esqueci minha senha.',
       'Fale com a secretaria: ela cria uma senha nova para você.'],
   ];
@@ -271,7 +294,10 @@
   async function resumoPapel(p) {
     if (!p) return null;
     let titulo, desc;
-    if (p.papel === 'admin') {
+    if (App.ehVisitante(p)) {
+      titulo = 'Você é visitante';
+      desc = 'Pode ver os eventos, o cardápio da cantina, as fotos dos cultos, a área Aprender e os pastores. Para ver as escalas, peça à secretaria o acesso de membro.';
+    } else if (p.papel === 'admin') {
       titulo = 'Você é admin';
       desc = 'Pode cadastrar e alterar tudo no site.';
     } else if ((p.lidera || []).length) {

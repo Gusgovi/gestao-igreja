@@ -23,12 +23,13 @@
     const hoje = util.hoje();
     const domingo = util.inicioSemana(hoje);
     const ler = (tabela, opts) => App.db.list(tabela, opts).catch(() => []);
-    const [escalas, membros, ministerios, musicas, itens, eventos] = await Promise.all([
+    const [escalas, membros, ministerios, musicas, itens, eventos, pastores] = await Promise.all([
       ler('escalas', { gte: { data: hoje }, lte: { data: util.somarDias(domingo, 13) }, order: 'data' }),
       ler('membros'), ler('ministerios'), ler('musicas'), ler('cantina_itens'),
       ler('eventos', { gte: { data: hoje }, order: 'data' }),
+      ler('pastores', { order: 'ordem' }),
     ]);
-    return { escalas, membros, ministerios, musicas, itens, eventos };
+    return { escalas, membros, ministerios, musicas, itens, eventos, pastores };
   }
 
   // ---------- Prévias de cada área (mini telas dentro dos cards) ----------
@@ -138,6 +139,7 @@
         h('nav.landing-links', { 'aria-label': 'Seções da página' },
           h('a', { href: '#/bem-vindo', onclick: irPara('o-que-tem') }, 'O que tem'),
           dados.eventos.length ? h('a', { href: '#/bem-vindo', onclick: irPara('eventos') }, 'Eventos') : null,
+          dados.pastores.length ? h('a', { href: '#/bem-vindo', onclick: irPara('pastores') }, 'Pastores') : null,
           h('a', { href: '#/bem-vindo', onclick: irPara('como-comecar') }, 'Como começar')),
         h('a.btn.pequeno', { href: destino }, textoEntrar)),
 
@@ -152,7 +154,8 @@
             h('div.hero-acoes',
               h('a.btn.grande', { href: destino }, textoEntrar),
               h('a.btn.vidro.grande', { href: '#/bem-vindo', onclick: irPara('o-que-tem') }, 'Ver o que tem aqui')),
-            demo ? h('p.hero-nota', 'Modo demonstração: dá para testar tudo, os dados ficam só neste navegador.') : null),
+            demo ? h('p.hero-nota', 'Modo demonstração: dá para testar tudo, os dados ficam só neste navegador.')
+              : !logado ? h('p.hero-nota', 'Primeira vez aqui? ', h('a', { href: '#/cadastro' }, 'Cadastre-se como visitante')) : null),
           proximo ? h('a.hero-proximo', { href: destino },
             h('span.hero-proximo-rotulo', 'Próximo encontro'),
             h('strong', proximo.titulo),
@@ -186,10 +189,15 @@
           h('div.secao-cabeca', h('h2#titulo-eventos', 'Próximos encontros')),
           h('div.eventos-trilho', dados.eventos.slice(0, 8).map((ev, i) => cardEvento(ev, i, destino)))) : null,
 
+        dados.pastores.length ? h('section#pastores.landing-secao', { 'aria-labelledby': 'titulo-pastores' },
+          h('div.secao-cabeca', h('h2#titulo-pastores', 'Conheça os pastores')),
+          App.cartoesPastores(dados.pastores)) : null,
+
         h('section#como-comecar.landing-secao.passos-secao', { 'aria-labelledby': 'titulo-passos' },
           h('div.secao-cabeca', h('h2#titulo-passos', 'Como começar')),
           h('ol.passos',
-            h('li', h('strong', 'Peça seu acesso à secretaria.'), h('span', 'Ela cadastra você com o seu e-mail.')),
+            h('li', h('strong', 'Peça seu acesso à secretaria.'), h('span', 'Ela cadastra você com o seu e-mail. ',
+              demo || logado ? 'Visitante pode criar a própria conta.' : h('a', { href: '#/cadastro' }, 'Visitante pode criar a própria conta.'))),
             h('li', h('strong', 'Entre com e-mail e senha.'), h('span', 'No celular ou no computador, do jeito que preferir.')),
             h('li', h('strong', 'Veja quando é a sua vez de servir.'), h('span', 'A tela inicial já mostra as escalas desta semana.')))),
 

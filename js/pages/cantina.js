@@ -15,14 +15,28 @@
     titulo: 'Cantina',
     async render(el, _p, recarregar) {
       const dia = App.estado.diaCantina || util.hoje();
+      // visitante vê só o cardápio (sem caixa nem escala dos responsáveis)
+      const visitante = App.ehVisitante(App.perfil);
+      const interno = (tabela, opts) => (visitante ? Promise.resolve([]) : App.db.list(tabela, opts));
       const [itens, vendas, ministerios, membros] = await Promise.all([
         App.db.list('cantina_itens', { order: 'nome' }),
-        App.db.list('cantina_vendas', { eq: { data: dia }, order: 'created_at' }),
-        App.db.list('ministerios'),
-        App.db.list('membros'),
+        interno('cantina_vendas', { eq: { data: dia }, order: 'created_at' }),
+        interno('ministerios'),
+        interno('membros'),
       ]);
       const pm = util.porId(membros);
       const minCantina = ministerios.find((m) => util.normalizar(m.nome).includes('cantina'));
+
+      if (visitante) {
+        el.appendChild(App.cabecalho('Cantina', 'O que tem para comer e beber depois do culto.'));
+        el.appendChild(h('section.card',
+          h('h2', '📋 Cardápio'),
+          itens.length ? h('ul.cardapio', itens.map((i) => h('li',
+            h('div.cardapio-item.so-leitura' + (i.disponivel === false ? '.indisponivel' : ''),
+              h('span', i.nome, i.disponivel === false ? h('span.muted', ' (em falta)') : null),
+              h('strong', util.dinheiro(i.preco)))))) : h('p.muted', 'O cardápio ainda não foi cadastrado.')));
+        return;
+      }
 
       el.appendChild(App.cabecalho('Cantina', 'Responsáveis, cardápio e caixa.'));
       const grade = h('div.grade-2');

@@ -13,12 +13,19 @@
 --               "Louvor" cuida também de músicas e ensaios; o da
 --               "Cantina", do cardápio e do caixa.
 --   membro    – vê as informações internas (escalas, louvor, cantina...).
---               Quem participa da Cantina também registra vendas.
---   pendente  – fez login mas ainda não foi ligado a um membro: não vê nada.
+--               Quem participa da Cantina também registra vendas; quem
+--               participa da Mídia envia as fotos do culto.
+--   visitante – criou a própria conta pelo botão "Sou visitante" (ou é um
+--               login ainda não ligado a um membro). Vê só o que é geral:
+--               eventos, Aprender, pastores, cardápio da cantina e fotos da
+--               Mídia. NÃO vê escalas, membros, louvor nem o caixa.
+--   pendente  – papel antigo (login sem membro). Hoje vira visitante.
 --
--- Como um login vira membro: a secretaria cadastra o membro com o mesmo
--- e-mail do login. O banco liga os dois sozinho (nos dois sentidos: se o
--- membro já existia quando o login foi criado, ou se foi cadastrado depois).
+-- Como um login vira membro: a secretaria salva o cadastro do membro com o
+-- mesmo e-mail do login (Membros > abrir a pessoa > Salvar). O banco liga os
+-- dois na hora. Quem cria a própria conta NUNCA é ligado sozinho, mesmo que
+-- o e-mail já esteja num cadastro: assim ninguém vira membro só por digitar
+-- o e-mail de outra pessoa.
 -- O PRIMEIRO login criado no projeto vira admin automaticamente.
 -- =============================================================
 
@@ -166,6 +173,37 @@ create table if not exists public.perfis (
   created_at timestamptz not null default now()
 );
 create index if not exists perfis_email_idx on public.perfis (lower(email));
+-- nome que o visitante digitou ao criar a conta
+alter table public.perfis add column if not exists nome text;
+alter table public.perfis drop constraint if exists perfis_papel_check;
+alter table public.perfis add constraint perfis_papel_check
+  check (papel in ('admin', 'membro', 'visitante', 'pendente'));
+alter table public.perfis alter column papel set default 'visitante';
+
+-- ---------- Conheça os pastores ----------
+-- Página pública (aparece também para quem não entrou). A tag "Pastor" no
+-- cadastro de membro continua no campo membros.cargo.
+create table if not exists public.pastores (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null check (length(trim(nome)) > 0),
+  titulo text default 'Pastor',
+  foto_url text,
+  texto text,
+  ordem int default 0,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- Mídia: fotos dos cultos ----------
+-- O arquivo fica no Storage (bucket "midia"); aqui ficam o endereço e o dia.
+create table if not exists public.midia_fotos (
+  id uuid primary key default gen_random_uuid(),
+  data date not null default current_date,
+  caminho text not null,   -- caminho do arquivo dentro do bucket
+  url text not null,       -- endereço público da imagem
+  legenda text,
+  created_at timestamptz not null default now()
+);
+create index if not exists midia_fotos_data_idx on public.midia_fotos (data desc);
 
 -- =============================================================
 -- Funções de apoio às regras de segurança
@@ -187,10 +225,16 @@ returns boolean language sql stable security definer set search_path = '' as $$
   select private.meu_papel() = 'admin';
 $$;
 
--- membro ligado ou admin (pendente não vê nada)
+-- membro ligado ou admin (visitante não vê as áreas internas)
 create or replace function private.tem_acesso()
 returns boolean language sql stable security definer set search_path = '' as $$
   select private.meu_papel() in ('admin', 'membro');
+$$;
+
+-- qualquer login (admin, membro ou visitante)
+create or replace function private.logado()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select private.meu_papel() in ('admin', 'membro', 'visitante');
 $$;
 
 -- admin, ou líder deste ministério
@@ -204,7 +248,7 @@ returns boolean language sql stable security definer set search_path = '' as $$
   );
 $$;
 
--- admin, ou líder de um ministério com este nome ('louvor', 'cantina')
+-- admin, ou líder de um ministério com este nome ('louvor', 'cantina', 'mídia')
 create or replace function private.lidera_area(p_nome text)
 returns boolean language sql stable security definer set search_path = '' as $$
   select private.eh_admin() or exists (
@@ -235,19 +279,16 @@ grant execute on all functions in schema private to authenticated;
 create or replace function private.criar_perfil()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare
-  v_membro uuid;
-  v_papel text := 'pendente';
+  v_papel text := 'visitante';
 begin
-  select id into v_membro from public.membros
-   where lower(email) = lower(new.email)
-     and not exists (select 1 from public.perfis p where p.membro_id = membros.id)
-   order by created_at limit 1;
-  if v_membro is not null then v_papel := 'membro'; end if;
-  -- o primeiro login do projeto vira admin
+  -- Todo login novo entra como visitante. Não liga ao membro pelo e-mail aqui:
+  -- quem cria a própria conta poderia usar o e-mail de outra pessoa.
+  -- A ligação acontece quando a secretaria salva o membro (gatilho abaixo).
+  -- O primeiro login do projeto vira admin.
   if not exists (select 1 from public.perfis where papel = 'admin') then v_papel := 'admin'; end if;
 
-  insert into public.perfis (id, email, membro_id, papel)
-  values (new.id, new.email, v_membro, v_papel)
+  insert into public.perfis (id, email, nome, papel)
+  values (new.id, new.email, nullif(trim(new.raw_user_meta_data ->> 'nome'), ''), v_papel)
   on conflict (id) do nothing;
   return new;
 end;
@@ -264,7 +305,7 @@ begin
   if new.email is not null and not exists (select 1 from public.perfis where membro_id = new.id) then
     update public.perfis
        set membro_id = new.id,
-           papel = case when papel = 'pendente' then 'membro' else papel end
+           papel = case when papel in ('pendente', 'visitante') then 'membro' else papel end
      where id = (select p.id from public.perfis p
                   where p.membro_id is null and lower(p.email) = lower(new.email)
                   order by p.created_at limit 1);
@@ -281,13 +322,16 @@ create trigger ao_salvar_membro after insert or update of email on public.membro
 insert into public.perfis (id, email, papel)
 select u.id, u.email, 'pendente' from auth.users u
 on conflict (id) do nothing;
-update public.perfis p set membro_id = m.id, papel = case when p.papel = 'pendente' then 'membro' else p.papel end
+-- só os logins antigos (pendentes) são ligados pelo e-mail aqui; visitantes não
+update public.perfis p set membro_id = m.id, papel = 'membro'
   from public.membros m
- where p.membro_id is null and lower(m.email) = lower(p.email)
+ where p.membro_id is null and p.papel = 'pendente' and lower(m.email) = lower(p.email)
    and not exists (select 1 from public.perfis x where x.membro_id = m.id);
 update public.perfis set papel = 'admin'
  where id = (select id from public.perfis order by created_at limit 1)
    and not exists (select 1 from public.perfis where papel = 'admin');
+-- quem sobrou sem membro vira visitante
+update public.perfis set papel = 'visitante' where papel = 'pendente';
 
 -- =============================================================
 -- Acesso pela API do site
@@ -299,10 +343,11 @@ grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on
   public.membros, public.ministerios, public.ministerio_membros, public.escalas,
   public.musicas, public.ensaios, public.ensaio_musicas,
-  public.cantina_itens, public.cantina_vendas, public.eventos, public.conteudos
+  public.cantina_itens, public.cantina_vendas, public.eventos, public.conteudos,
+  public.pastores, public.midia_fotos
   to authenticated;
 grant select, update on public.perfis to authenticated;
-grant select on public.eventos, public.conteudos to anon;
+grant select on public.eventos, public.conteudos, public.pastores to anon;
 
 -- =============================================================
 -- Regras de segurança (RLS)
@@ -326,10 +371,12 @@ begin
       ('musicas',            '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
       ('ensaios',            '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
       ('ensaio_musicas',     '(select private.tem_acesso())',      '(select private.lidera_area(''louvor''))'),
-      ('cantina_itens',      '(select private.tem_acesso())',      '(select private.lidera_area(''cantina''))'),
+      ('cantina_itens',      '(select private.logado())',          '(select private.lidera_area(''cantina''))'),
       ('cantina_vendas',     '(select private.tem_acesso())',      '(select private.lidera_area(''cantina''))'),
       ('eventos',            'true',                               '(select private.eh_admin())'),
-      ('conteudos',          'true',                               '(select private.eh_admin())')
+      ('conteudos',          'true',                               '(select private.eh_admin())'),
+      ('pastores',           'true',                               '(select private.eh_admin())'),
+      ('midia_fotos',        '(select private.logado())',          '(select private.participa_area(''mídia''))')
     ) as t(tabela, ler, escrever)
   loop
     execute format('alter table public.%I enable row level security', r.tabela);
@@ -362,3 +409,25 @@ create policy "ver o proprio perfil" on public.perfis
   for select to authenticated using (id = (select auth.uid()) or (select private.eh_admin()));
 create policy "admin altera perfis" on public.perfis
   for update to authenticated using ((select private.eh_admin())) with check ((select private.eh_admin()));
+
+-- =============================================================
+-- Fotos da Mídia no Storage
+-- Bucket público: quem tem o endereço da foto consegue ver (é assim que a
+-- imagem aparece no site). Enviar e apagar: admin, líder ou quem participa
+-- do ministério "Mídia".
+-- =============================================================
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('midia', 'midia', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "midia enviar foto" on storage.objects;
+drop policy if exists "midia apagar foto" on storage.objects;
+drop policy if exists "midia ver foto" on storage.objects;
+-- (apagar pela API também precisa enxergar o arquivo)
+create policy "midia ver foto" on storage.objects for select to authenticated
+  using (bucket_id = 'midia' and (select private.logado()));
+create policy "midia enviar foto" on storage.objects for insert to authenticated
+  with check (bucket_id = 'midia' and (select private.participa_area('mídia')));
+create policy "midia apagar foto" on storage.objects for delete to authenticated
+  using (bucket_id = 'midia' and (select private.participa_area('mídia')));

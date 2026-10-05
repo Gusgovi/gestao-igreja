@@ -66,12 +66,15 @@
       const hoje = util.hoje();
       const domingo = util.inicioSemana(hoje);
       const sabado = util.somarDias(domingo, 6);
+      // visitante não vê escalas, membros nem louvor
+      const visitante = App.ehVisitante(App.perfil);
+      const interno = (tabela, opts) => (visitante ? Promise.resolve([]) : App.db.list(tabela, opts));
       const [eventos, escalas, membros, ministerios, ensaios] = await Promise.all([
         App.db.list('eventos', { gte: { data: hoje }, order: 'data' }),
-        App.db.list('escalas', { gte: { data: domingo }, lte: { data: sabado }, order: 'data' }),
-        App.db.list('membros'),
-        App.db.list('ministerios'),
-        App.db.list('ensaios', { gte: { data: hoje }, order: 'data' }),
+        interno('escalas', { gte: { data: domingo }, lte: { data: sabado }, order: 'data' }),
+        interno('membros'),
+        interno('ministerios'),
+        interno('ensaios', { gte: { data: hoje }, order: 'data' }),
       ]);
       const pm = util.porId(membros), pmin = util.porId(ministerios);
       const nome = (window.APP_CONFIG || {}).NOME_IGREJA || 'Igreja';
@@ -81,7 +84,9 @@
       el.appendChild(h('header.pagina-topo', h('div',
         h('p.saudacao-data', util.dataLonga(hoje)),
         h('h1', saudacao + '!'),
-        h('p.subtitulo', `Bem-vindo ao sistema da ${nome}.`))));
+        h('p.subtitulo', visitante
+          ? `${App.perfil.nome ? App.perfil.nome.split(' ')[0] + ', que' : 'Que'} bom ter você com a gente na ${nome}!`
+          : `Bem-vindo ao sistema da ${nome}.`))));
 
       // Stories
       const stories = h('section.stories', { 'aria-label': 'Próximos cultos e eventos' },
@@ -97,6 +102,16 @@
           : h('p.muted', App.posso('eventos') ? 'Nenhum evento futuro. Cadastre em "Eventos".' : 'Nenhum evento futuro.'),
         App.posso('eventos') ? h('a.story.novo', { href: '#/eventos' }, h('span.story-anel.cinza', h('span.story-img.mais', '+')), h('span.story-titulo', 'Eventos')) : null);
       el.appendChild(stories);
+
+      if (visitante) {
+        el.appendChild(h('section.card',
+          h('h2', 'O que você encontra aqui'),
+          h('div.atalhos',
+            [['eventos', '📣', 'Eventos'], ['cantina', '☕', 'Cantina'], ['midia', '📸', 'Fotos dos cultos'], ['aprender', '📖', 'Aprender'], ['pastores', '🙏', 'Pastores']]
+              .map(([r, i, t]) => h('a.atalho', { href: '#/' + r }, h('span', { 'aria-hidden': 'true' }, i), t))),
+          h('p.muted', 'Quer servir em algum ministério? Fale com a secretaria: ela libera o acesso de membro para você.')));
+        return;
+      }
 
       const grade = h('div.grade-2');
 
@@ -130,7 +145,7 @@
       lateral.appendChild(h('section.card',
         h('h2', 'Atalhos'),
         h('div.atalhos',
-          [['membros', '👥', 'Membros'], ['ministerios', '🤝', 'Ministérios'], ['cantina', '☕', 'Cantina'], ['aprender', '📖', 'Aprender']]
+          [['membros', '👥', 'Membros'], ['ministerios', '🤝', 'Ministérios'], ['cantina', '☕', 'Cantina'], ['midia', '📸', 'Mídia'], ['aprender', '📖', 'Aprender'], ['pastores', '🙏', 'Pastores']]
             .map(([r, i, t]) => h('a.atalho', { href: '#/' + r }, h('span', { 'aria-hidden': 'true' }, i), t)))));
       grade.appendChild(lateral);
       el.appendChild(grade);

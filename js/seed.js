@@ -29,6 +29,7 @@
       { id: id('mem'), nome: 'Sebastian Chuliver', cargo: 'Pastor', status: 'ativo', created_at: agora },
       { id: id('mem'), nome: 'Romina Zaninovich', cargo: 'Pastora', status: 'ativo', created_at: agora },
       { id: id('mem'), nome: 'Adriana', cargo: 'Diaconisa', status: 'ativo', created_at: agora },
+      { id: id('mem'), nome: 'Ana Carla', status: 'ativo', created_at: agora },
     );
     const m = (nome) => membros.find((x) => x.nome.startsWith(nome)).id;
 
@@ -37,6 +38,8 @@
       { id: id('min'), nome: 'Portaria', descricao: 'Recepção e acolhimento na entrada.', lider_id: m('Daniel'), cor: '#0284c7' },
       { id: id('min'), nome: 'Cantina', descricao: 'Lanches após os cultos.', lider_id: m('Carla'), cor: '#ea580c' },
       { id: id('min'), nome: 'Limpeza', descricao: 'Organização e limpeza do templo.', lider_id: m('Eduarda'), cor: '#059669' },
+      { id: id('min'), nome: 'Mídia', descricao: 'Fotos, telão e redes sociais dos cultos.', lider_id: m('Ana Carla'), cor: '#db2777' },
+      { id: id('min'), nome: 'Som', descricao: 'Caixas de som, microfones e mesa de som.', lider_id: m('Ana Carla'), cor: '#0d9488' },
     ].map((x) => ({ ...x, created_at: agora }));
     const min = (nome) => ministerios.find((x) => x.nome === nome).id;
 
@@ -45,6 +48,8 @@
       Portaria: ['Daniel', 'Henrique', 'Larissa'],
       Cantina: ['Carla', 'Ana', 'Larissa'],
       Limpeza: ['Eduarda', 'Henrique', 'Felipe', 'João'],
+      'Mídia': ['Ana Carla', 'Gabriela', 'Daniel'],
+      Som: ['Ana Carla', 'Henrique'],
     };
     const ministerio_membros = [];
     for (const [mn, pessoas] of Object.entries(participacao)) {
@@ -61,6 +66,9 @@
       esc('Cantina', 'Carla', domingo, 'Caixa'), esc('Cantina', 'Ana', domingo, 'Preparo'),
       esc('Limpeza', 'Eduarda', u.somarDias(domingo, 6), 'Salão'), esc('Limpeza', 'João', u.somarDias(domingo, 6), 'Banheiros'),
       esc('Louvor', 'Bruno', proxDomingo, 'Violão'), esc('Louvor', 'Gabriela', proxDomingo, 'Vocal'),
+      esc('Mídia', 'Gabriela', domingo, 'Fotos'), esc('Mídia', 'Daniel', domingo, 'Telão'),
+      esc('Mídia', 'Ana Carla', domingo, 'Stories'),
+      esc('Som', 'Henrique', domingo, 'Mesa de som'), esc('Som', 'Ana Carla', domingo, 'Microfones'),
     ];
 
     const musicas = [
@@ -97,7 +105,12 @@
       ['visao', 'Nossa visão', 1], ['visao', 'Nossa missão', 2], ['visao', 'Nossos valores', 3],
     ].map(([secao, titulo, ordem]) => ({ id: id('cont'), secao, titulo, ordem, corpo: texto, created_at: agora }));
 
+    const pastores = [
+      { nome: 'Sebastian Chuliver', titulo: 'Pastor', ordem: 1 },
+      { nome: 'Romina Zaninovich', titulo: 'Pastora', ordem: 2 },
+    ].map((p) => ({ id: id('pas'), foto_url: '', texto: 'Texto provisório. A liderança vai escrever um pouco sobre a história e o chamado do pastor.', created_at: agora, ...p }));
+
     return { membros, ministerios, ministerio_membros, escalas, musicas, ensaios: [ensaio], ensaio_musicas,
-      cantina_itens, cantina_vendas, eventos, conteudos };
+      cantina_itens, cantina_vendas, eventos, conteudos, pastores, midia_fotos: [] };
   };
 })();
