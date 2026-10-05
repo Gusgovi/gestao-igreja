@@ -122,7 +122,7 @@
       if (c.tipo === 'select') {
         input = h('select', { id, name: c.nome },
           c.vazio !== false ? h('option', { value: '' }, c.vazio || '— escolha —') : null,
-          (c.opcoes || []).map((o) => h('option', { value: o.valor, selected: String(o.valor) === String(v ?? '') }, o.texto)));
+          (c.opcoes || []).map((o) => h('option', { value: o.valor, selected: String(o.valor) === String(v ?? c.padrao ?? '') }, o.texto)));
       } else if (c.tipo === 'textarea') {
         input = h('textarea', { id, name: c.nome, rows: c.linhas || 4 });
         input.value = v ?? '';

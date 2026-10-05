@@ -77,7 +77,12 @@
       ['Grande é o Senhor', 'Adhemar de Campos', 'E', 80], ['Aquieta Minh\'alma', 'Ministério Zoe', 'B', 64],
     ].map(([titulo, artista, tom, bpm]) => ({ id: id('mus'), titulo, artista, tom, bpm, created_at: agora }));
 
-    const ensaio = { id: id('ens'), data: u.somarDias(domingo, 6), hora: '16:00', local: 'Templo', observacoes: 'Chegar 15 min antes.', created_at: agora };
+    // ensaio fixo toda quinta às 19h, com as músicas do culto de domingo
+    let quinta = hoje;
+    while (u.parse(quinta).getDay() !== 4) quinta = u.somarDias(quinta, 1);
+    const fixo = { id: id('fixo'), dia_semana: 4, hora: '19:00', local: 'Templo', culto_dia_semana: 0, created_at: agora };
+    const ensaio = { id: id('ens'), data: quinta, hora: '19:00', local: 'Templo', fixo_id: fixo.id, culto_data: u.somarDias(quinta, 3),
+      cancelado: false, observacoes: 'Chegar 15 min antes.', created_at: agora };
     const ensaio_musicas = musicas.slice(0, 4).map((mu, i) => ({ id: id('em'), ensaio_id: ensaio.id, musica_id: mu.id, ordem: i }));
 
     const cantina_itens = [
@@ -111,6 +116,6 @@
     ].map((p) => ({ id: id('pas'), foto_url: '', texto: 'Texto provisório. A liderança vai escrever um pouco sobre a história e o chamado do pastor.', created_at: agora, ...p }));
 
     return { membros, ministerios, ministerio_membros, escalas, musicas, ensaios: [ensaio], ensaio_musicas,
-      cantina_itens, cantina_vendas, eventos, conteudos, pastores, midia_fotos: [] };
+      cantina_itens, cantina_vendas, eventos, conteudos, pastores, midia_fotos: [], ensaios_fixos: [fixo] };
   };
 })();

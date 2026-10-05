@@ -558,3 +558,4 @@ body::before {
 /* Mídia e Som lado a lado, mesma largura e mesma altura */
 .quem-serve { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 1.25rem; align-items: stretch; }
 .quem-serve > section.card + section.card { margin-top: 0; }
+.culto-alvo { margin: .35rem 0 0; font-weight: 700; color: var(--primaria); }

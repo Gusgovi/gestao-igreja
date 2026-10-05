@@ -74,7 +74,7 @@
         interno('escalas', { gte: { data: domingo }, lte: { data: sabado }, order: 'data' }),
         interno('membros'),
         interno('ministerios'),
-        interno('ensaios', { gte: { data: hoje }, order: 'data' }),
+        visitante ? [] : App.proximosEnsaios(),
       ]);
       const pm = util.porId(membros), pmin = util.porId(ministerios);
       const nome = (window.APP_CONFIG || {}).NOME_IGREJA || 'Igreja';
@@ -139,6 +139,7 @@
         h('div.card-topo', h('h2', '🎵 Próximo ensaio'), h('a.link', { href: '#/louvor' }, 'Louvor')),
         ensaio
           ? [h('p.destaque', util.dataLonga(ensaio.data) + (ensaio.hora ? ' às ' + ensaio.hora : '')),
+            ensaio.culto_data ? h('p.culto-alvo', '🎤 Músicas para o culto de ' + util.dataLonga(ensaio.culto_data).toLowerCase()) : null,
             ensaio.local ? h('p.muted', '📍 ' + ensaio.local) : null]
           : h('p.muted', 'Nenhum ensaio marcado.')));
 

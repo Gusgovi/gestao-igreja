@@ -112,6 +112,24 @@ create table if not exists public.ensaios (
 );
 create index if not exists ensaios_data_idx on public.ensaios (data);
 
+-- Ensaio fixo: "toda quinta às 19h". O site mostra as próximas semanas sozinho;
+-- a linha em "ensaios" só é criada quando alguém mexe naquele dia (músicas, horário...).
+create table if not exists public.ensaios_fixos (
+  id uuid primary key default gen_random_uuid(),
+  dia_semana int not null check (dia_semana between 0 and 6),   -- 0 = domingo
+  hora text,
+  local text,
+  culto_dia_semana int check (culto_dia_semana between 0 and 6), -- para qual culto são as músicas
+  created_at timestamptz not null default now()
+);
+-- para qual culto são as músicas do ensaio (ex.: ensaio na quinta, músicas do domingo)
+alter table public.ensaios add column if not exists culto_data date;
+-- ensaio que veio de um ensaio fixo, e se foi cancelado naquele dia
+alter table public.ensaios add column if not exists fixo_id uuid references public.ensaios_fixos(id) on delete set null;
+alter table public.ensaios add column if not exists cancelado boolean not null default false;
+create unique index if not exists ensaios_fixo_data_idx on public.ensaios (fixo_id, data) where fixo_id is not null;
+create index if not exists ensaios_fixo_idx on public.ensaios (fixo_id);
+
 create table if not exists public.ensaio_musicas (
   id uuid primary key default gen_random_uuid(),
   ensaio_id uuid not null references public.ensaios(id) on delete cascade,
@@ -362,7 +380,7 @@ update public.perfis set papel = 'visitante' where papel = 'pendente';
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on
   public.membros, public.ministerios, public.ministerio_membros, public.escalas,
-  public.musicas, public.ensaios, public.ensaio_musicas,
+  public.musicas, public.ensaios, public.ensaio_musicas, public.ensaios_fixos,
   public.cantina_itens, public.cantina_vendas, public.eventos, public.conteudos,
   public.pastores, public.midia_fotos
   to authenticated;
@@ -391,6 +409,7 @@ begin
       ('musicas',            '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
       ('ensaios',            '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
       ('ensaio_musicas',     '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
+      ('ensaios_fixos',      '(select private.tem_acesso())',      '(select private.participa_area(''louvor''))'),
       ('cantina_itens',      '(select private.logado())',          '(select private.lidera_area(''cantina''))'),
       ('cantina_vendas',     '(select private.tem_acesso())',      '(select private.lidera_area(''cantina''))'),
       ('eventos',            'true',                               '(select private.eh_admin())'),
