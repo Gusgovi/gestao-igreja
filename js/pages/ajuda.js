@@ -104,6 +104,156 @@
     ]],
   ];
 
+  // Passo a passo com imagens, em duas versões (celular e computador):
+  // [print, [x, y, largura, altura] em % da imagem (onde tocar), print do PC, marcação no PC, legenda, legenda no PC].
+  // Prints do modo demonstração, em assets/img/ajuda/celular e assets/img/ajuda/pc.
+  const FOTOS = {
+    'entrar': [
+      ['entrar-1', [3.5, 45.3, 93.1, 9.4], 'entrar-1', [4.5, 45.5, 9.5, 9.0],
+        'Na página de boas-vindas, toque em **Entrar**.',
+        'Na página de boas-vindas, clique em **Entrar**.'],
+      ['entrar-2', [11.8, 70.0, 76.4, 8.3], 'entrar-2', [35.5, 69.0, 29.1, 7.8],
+        'Digite seu e-mail e sua senha e toque em **Entrar**.',
+        'Digite seu e-mail e sua senha e clique em **Entrar**.'],
+      ['entrar-3', [75.9, 88.5, 21.3, 10.0], 'entrar-3', [0.0, 0.0, 20.9, 101.5],
+        'No celular, toque em **Menu** para ver todas as telas.',
+        'No computador, o menu fica sempre aqui, na esquerda.'],
+      ['entrar-4', [1.9, 91.5, 61.5, 6.9], 'entrar-3', [0.6, 91.9, 18.7, 6.5],
+        'Para sair, abra o menu e toque em **Sair**.',
+        'Para sair, clique em **Sair**, no fim do menu.'],
+    ],
+    'ver-escala': [
+      ['entrar-3', [21.1, 88.5, 21.3, 10.0], 'entrar-3', [0.6, 30.5, 18.7, 8.3],
+        'Toque em **Escalas** no menu de baixo.',
+        'Clique em **Escalas** no menu da esquerda.'],
+      ['escala-2', [7.4, 46.0, 85.1, 8.0], 'escala-2', [23.9, 46.2, 72.1, 7.6],
+        'Cada dia mostra quem serve e a função de cada um.',
+        'Cada dia mostra quem serve e a função de cada um.'],
+      ['escala-3', [2.8, 15.0, 94.4, 14.1], 'escala-3', [22.5, 18.5, 74.9, 7.0],
+        'Toque em um ministério para ver só a escala dele.',
+        'Clique em um ministério para ver só a escala dele.'],
+      ['escala-4', [67.0, 29.9, 30.2, 7.9], 'escala-3', [86.9, 26.4, 10.5, 7.8],
+        'Toque em **Próxima ›** para ver a semana seguinte.',
+        'Clique em **Próxima ›** para ver a semana seguinte.'],
+    ],
+    'ver-musica': [
+      ['musica-ver-1', [14.8, 47.5, 39.0, 5.0], 'ensaio-1', [26.2, 59.0, 11.9, 4.8],
+        'Em **Louvor**, toque no nome da música.',
+        'Em **Louvor**, clique no nome da música.'],
+      ['musica-ver-2', [0.0, 77.7, 102.6, 23.0], 'musica-ver-2', [21.5, 43.9, 57.0, 21.9],
+        'Aqui aparecem o tom, o andamento, o link e a letra.',
+        'Aqui aparecem o tom, o andamento, o link e a letra.'],
+    ],
+    'ver-eventos': [
+      ['entrar-3', [2.7, 20.0, 26.7, 18.6], 'entrar-3', [22.7, 23.2, 8.1, 17.6],
+        'Na tela **Início**, toque em um evento.',
+        'Na tela **Início**, clique em um evento.'],
+      ['eventos-2', [82.1, 2.6, 15.4, 7.9], 'eventos-2', [94.5, 2.5, 4.7, 7.5],
+        'Toque nos lados da tela para passar. Para fechar, toque no **✕**.',
+        'Clique nos lados da tela para passar. Para fechar, clique no **✕**.'],
+    ],
+    'vender': [
+      ['vender-1', [8.7, 30.6, 41.5, 13.2], 'vender-1', [24.3, 33.3, 14.0, 12.5],
+        'Em **Cantina**, toque no item a cada venda.',
+        'Em **Cantina**, clique no item a cada venda.'],
+      ['vender-2', [8.7, 44.5, 82.5, 10.9], 'cardapio-1', [24.3, 58.7, 41.8, 10.4],
+        'O total do dia vai somando sozinho.',
+        'O total do dia vai somando sozinho.'],
+      ['vender-3', [79.0, 46.8, 12.3, 6.3], 'cardapio-1', [62.4, 69.2, 3.8, 6.0],
+        'Errou? Toque no **−** para desfazer uma venda.',
+        'Errou? Clique no **−** para desfazer uma venda.'],
+    ],
+    'escalar': [
+      ['escala-3', [2.8, 38.1, 49.7, 8.3], 'escala-3', [22.5, 34.5, 15.1, 7.8],
+        'Em **Escalas**, toque em **+ Escalar pessoa**.',
+        'Em **Escalas**, clique em **+ Escalar pessoa**.'],
+      ['escalar-2', [4.2, 46.1, 91.7, 19.3], 'escalar-2', [31.0, 42.6, 38.1, 15.4],
+        'Escolha o ministério, o dia e a pessoa.',
+        'Escolha o ministério, o dia e a pessoa.'],
+      ['escalar-3', [68.6, 89.5, 27.3, 8.3], 'escalar-3', [60.7, 83.6, 8.3, 7.8],
+        'Se quiser, escreva a função. Depois toque em **Salvar**.',
+        'Se quiser, escreva a função. Depois clique em **Salvar**.'],
+    ],
+    'copiar-semana': [
+      ['ministerio-1', [2.8, 27.6, 94.4, 24.3], 'ministerio-1', [22.5, 18.5, 24.7, 23.0],
+        'Em **Ministérios**, toque no seu ministério.',
+        'Em **Ministérios**, clique no seu ministério.'],
+      ['copiar-2', [8.7, 45.9, 68.9, 8.3], 'copiar-2', [39.2, 46.1, 21.0, 7.8],
+        'Toque em **⧉ Copiar semana anterior**.',
+        'Clique em **⧉ Copiar semana anterior**.'],
+    ],
+    'participantes': [
+      ['ministerio-1', [2.8, 27.6, 94.4, 24.3], 'ministerio-1', [22.5, 18.5, 24.7, 23.0],
+        'Em **Ministérios**, toque no seu ministério.',
+        'Em **Ministérios**, clique no seu ministério.'],
+      ['lider-1', [57.9, 23.0, 33.3, 6.9], 'lider-1', [85.5, 26.1, 10.2, 6.5],
+        'Toque em **+ Adicionar** e escolha a pessoa.',
+        'Clique em **+ Adicionar** e escolha a pessoa.'],
+      ['lider-1', [41.8, 30.8, 10.8, 5.5], 'lider-1', [34.4, 33.5, 3.3, 5.2],
+        'Para tirar alguém, toque no **✕** ao lado do nome.',
+        'Para tirar alguém, clique no **✕** ao lado do nome.'],
+    ],
+    'musica': [
+      ['musica-1', [2.8, 31.4, 44.9, 8.3], 'musica-1', [83.8, 26.2, 13.7, 7.8],
+        'Em **Louvor**, na aba **Músicas**, toque em **+ Nova música**.',
+        'Em **Louvor**, na aba **Músicas**, clique em **+ Nova música**.'],
+      ['musica-2', [4.2, 20.0, 91.7, 12.4], 'musica-2', [31.0, 13.6, 38.1, 11.8],
+        'Escreva o nome da música (o resto é opcional) e toque em **Salvar**.',
+        'Escreva o nome da música (o resto é opcional) e clique em **Salvar**.'],
+    ],
+    'ensaio': [
+      ['ensaio-1', [2.8, 23.1, 47.6, 8.3], 'ensaio-1', [22.5, 26.2, 14.5, 7.8],
+        'Em **Louvor**, toque em **+ Marcar ensaio**.',
+        'Em **Louvor**, clique em **+ Marcar ensaio**.'],
+      ['ensaio-2', [8.7, 76.6, 28.6, 6.9], 'ensaio-1', [24.3, 84.4, 8.7, 6.5],
+        'No ensaio, toque em **+ Música** para escolher as músicas.',
+        'No ensaio, clique em **+ Música** para escolher as músicas.'],
+      ['ensaio-2', [57.9, 49.7, 33.4, 6.3], 'ensaio-1', [85.5, 58.9, 10.2, 6.0],
+        'Use as setas para mudar a ordem. O **✕** tira a música do ensaio.',
+        'Use as setas para mudar a ordem. O **✕** tira a música do ensaio.'],
+    ],
+    'cardapio': [
+      ['cardapio-1', [66.9, 46.5, 24.3, 6.9], 'cardapio-1', [88.2, 44.9, 7.4, 6.5],
+        'Em **Cantina**, toque em **+ Item** para criar um item.',
+        'Em **Cantina**, clique em **+ Item** para criar um item.'],
+      ['cardapio-2', [4.2, 79.4, 91.7, 8.9], 'cardapio-2', [31.0, 58.3, 38.1, 8.5],
+        'Acabou? Toque no item e desmarque **Disponível para venda**.',
+        'Acabou? Clique no item e desmarque **Disponível para venda**.'],
+    ],
+    'membro': [
+      ['membro-1', [2.8, 13.9, 47.2, 8.3], 'membro-1', [83.1, 9.0, 14.4, 7.8],
+        'Em **Membros**, toque em **+ Novo membro**.',
+        'Em **Membros**, clique em **+ Novo membro**.'],
+      ['membro-2', [4.2, 45.9, 91.7, 12.4], 'membro-2', [31.0, 38.2, 38.1, 11.8],
+        'Coloque o e-mail se a pessoa for ter login.',
+        'Coloque o e-mail se a pessoa for ter login.'],
+    ],
+    'lider': [
+      ['ministerio-1', [2.8, 27.6, 94.4, 24.3], 'ministerio-1', [22.5, 18.5, 24.7, 23.0],
+        'Em **Ministérios**, toque no ministério.',
+        'Em **Ministérios**, clique no ministério.'],
+      ['lider-1', [64.8, 10.2, 32.4, 8.3], 'lider-1', [87.6, 13.9, 9.9, 7.8],
+        'Toque em **✎ Editar**.',
+        'Clique em **✎ Editar**.'],
+      ['lider-2', [4.2, 59.2, 91.7, 12.4], 'lider-2', [31.0, 50.2, 38.1, 11.8],
+        'Escolha a pessoa no campo **Líder** e toque em **Salvar**.',
+        'Escolha a pessoa no campo **Líder** e clique em **Salvar**.'],
+    ],
+    'evento': [
+      ['evento-1', [44.1, 17.6, 44.1, 8.3], 'evento-1', [84.0, 9.0, 13.4, 7.8],
+        'Em **Eventos**, toque em **+ Novo evento**.',
+        'Em **Eventos**, clique em **+ Novo evento**.'],
+      ['evento-2', [4.2, 59.9, 91.7, 28.4], 'evento-2', [31.0, 62.7, 38.1, 24.1],
+        'Para ter imagem, cole aqui o link de uma foto.',
+        'Para ter imagem, cole aqui o link de uma foto.'],
+    ],
+    'texto': [
+      ['texto-1', [2.8, 17.6, 40.9, 8.3], 'texto-1', [85.0, 9.0, 12.5, 7.8],
+        'Em **Aprender**, toque em **+ Novo texto**.',
+        'Em **Aprender**, clique em **+ Novo texto**.'],
+    ],
+  };
+
   const DUVIDAS = [
     ['Não aparece o botão para mudar alguma coisa.',
       'Cada pessoa só vê os botões do que pode alterar. Se precisar mudar algo, fale com o líder do ministério ou com a secretaria.'],
@@ -136,13 +286,62 @@
     return h('section.card.ajuda-papel', h('h2', titulo), h('p', desc));
   }
 
+  // Mesma largura em que o site troca o menu de baixo pelo menu lateral (css/style.css)
+  const TELA_PC = window.matchMedia('(min-width: 861px)');
+
+  // Mostra um print por vez, com a marcação de onde tocar e botões para passar.
+  // No computador usa os prints do computador; no celular, os do celular.
+  function verFotos(fotos) {
+    let i = 0;
+    const img = h('img.ajuda-print', { alt: '' });
+    const marca = h('span.ajuda-marca', { 'aria-hidden': 'true' });
+    const contador = h('p.ajuda-contador');
+    const legenda = h('p.ajuda-legenda', { 'aria-live': 'polite' });
+    const anterior = h('button.btn.secundario', { type: 'button', onclick: () => ir(i - 1) }, '‹ Anterior');
+    const proximo = h('button.btn', { type: 'button', onclick: () => ir(i + 1) }, 'Próximo ›');
+    const caixa = h('div.ajuda-fotos',
+      h('div.ajuda-tela', img, marca),
+      h('div.ajuda-explica', contador, legenda,
+        fotos.length > 1 ? h('div.ajuda-nav', anterior, proximo) : null));
+    function ir(n) {
+      i = Math.max(0, Math.min(fotos.length - 1, n));
+      const pc = TELA_PC.matches;
+      const [arqCel, marcaCel, arqPc, marcaPc, legCel, legPc] = fotos[i];
+      const [x, y, w, alt] = pc ? marcaPc : marcaCel;
+      const leg = pc ? legPc : legCel;
+      caixa.classList.toggle('pc', pc);
+      img.width = pc ? 1280 : 780;
+      img.height = pc ? 800 : 1520;
+      img.src = `assets/img/ajuda/${pc ? 'pc/' + arqPc : 'celular/' + arqCel}.webp`;
+      img.alt = 'Tela do site: ' + leg.replace(/\*\*/g, '');
+      Object.assign(marca.style, { left: x + '%', top: y + '%', width: w + '%', height: alt + '%' });
+      contador.textContent = `Passo ${i + 1} de ${fotos.length}`;
+      legenda.innerHTML = '';
+      legenda.append(...texto(leg));
+      anterior.disabled = i === 0;
+      proximo.disabled = i === fotos.length - 1;
+    }
+    // girou o tablet ou mudou o tamanho da janela: troca para a versão certa
+    TELA_PC.addEventListener('change', () => { if (caixa.isConnected) ir(i); });
+    ir(0);
+    return caixa;
+  }
+
   function cartao(t, aberto) {
     const [id, pergunta, quem, , rota, passos] = t;
-    return h('details.artigo', { id: 'ajuda-' + id, open: aberto },
-      h('summary', h('span', pergunta), h('span.ajuda-quem', quem)),
-      h('div.artigo-corpo',
-        h('ol.ajuda-passos', passos.map((p) => h('li', p.startsWith('update ') ? h('code.ajuda-codigo', p) : texto(p)))),
-        rota ? h('a.btn.secundario.pequeno', { href: '#/' + rota }, 'Abrir ' + App.paginas[rota].titulo) : null));
+    const lista = h('ol.ajuda-passos', passos.map((p) => h('li', p.startsWith('update ') ? h('code.ajuda-codigo', p) : texto(p))));
+    const corpo = h('div.artigo-corpo');
+    const cartao = h('details.artigo', { id: 'ajuda-' + id, open: aberto }, h('summary', h('span', pergunta), h('span.ajuda-quem', quem)), corpo);
+    // monta só ao abrir, para não baixar as imagens de todas as tarefas de uma vez
+    const montar = () => {
+      if (corpo.childNodes.length || !cartao.open) return;
+      if (FOTOS[id]) corpo.append(verFotos(FOTOS[id]), h('details.ajuda-texto', h('summary', 'Ver tudo em texto'), lista));
+      else corpo.append(lista);
+      if (rota) corpo.append(h('a.btn.secundario.pequeno', { href: '#/' + rota }, 'Abrir ' + App.paginas[rota].titulo));
+    };
+    cartao.addEventListener('toggle', montar);
+    montar();
+    return cartao;
   }
 
   App.paginas.ajuda = {

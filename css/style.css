@@ -495,3 +495,32 @@ body::before {
   background: var(--fundo); border: 1px solid var(--borda); font-size: .85rem;
 }
 .ajuda-rodape { margin-top: 1.5rem; }
+/* Passo a passo com prints: a moldura amarela mostra onde tocar */
+.ajuda-fotos { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 1.5rem; align-items: center; margin-bottom: 1rem; }
+.ajuda-tela { position: relative; border-radius: 22px; overflow: hidden; border: 1px solid var(--borda-forte); box-shadow: var(--sombra); line-height: 0; }
+.ajuda-print { width: 100%; height: auto; display: block; }
+.ajuda-marca {
+  position: absolute; border: 3px solid var(--aviso); border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(2, 8, 20, .45), 0 0 18px rgba(247, 194, 91, .7);
+  animation: ajuda-pulso 1.6s ease-in-out infinite;
+}
+@keyframes ajuda-pulso { 50% { box-shadow: 0 0 0 9999px rgba(2, 8, 20, .45), 0 0 4px rgba(247, 194, 91, .3); } }
+@media (prefers-reduced-motion: reduce) { .ajuda-marca { animation: none; } }
+.ajuda-explica { display: grid; gap: .6rem; align-content: center; }
+.ajuda-contador { margin: 0; font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--aviso); }
+.ajuda-legenda { margin: 0; font-size: 1.25rem; line-height: 1.4; font-family: var(--fonte-titulo); font-weight: 600; text-wrap: balance; }
+.ajuda-nav { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .4rem; }
+.ajuda-nav .btn:disabled { opacity: .4; cursor: default; }
+.ajuda-texto { margin-bottom: 1rem; }
+.ajuda-texto > summary { cursor: pointer; font-weight: 700; color: var(--primaria-forte); margin-bottom: .6rem; }
+@media (max-width: 700px) {
+  .ajuda-fotos { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 1rem; }
+  .ajuda-tela { width: min(100%, 290px); }
+  .ajuda-explica { width: 100%; text-align: center; justify-items: center; order: -1; }
+  .ajuda-legenda { font-size: 1.15rem; }
+}
+/* No computador o print é largo: explicação e botões em cima, imagem embaixo */
+.ajuda-fotos.pc { grid-template-columns: minmax(0, 1fr); max-width: 760px; gap: 1rem; }
+.ajuda-fotos.pc .ajuda-explica { order: -1; }
+.ajuda-fotos.pc .ajuda-tela { border-radius: 14px; }
+.ajuda-fotos.pc .ajuda-marca { border-radius: 10px; }
