@@ -54,7 +54,8 @@
     },
     async insert(tabela, obj) {
       const d = this._dados();
-      const novo = { id: novoId(), created_at: new Date().toISOString(), ...obj };
+      const agora = new Date().toISOString();
+      const novo = { id: novoId(), created_at: agora, ...obj, atualizado_por: 'Você (demonstração)', atualizado_em: agora };
       (d[tabela] = d[tabela] || []).push(novo);
       this._gravar(d);
       return novo;
@@ -67,7 +68,7 @@
     async update(tabela, id, obj) {
       const d = this._dados();
       const item = (d[tabela] || []).find((x) => x.id === id);
-      if (item) Object.assign(item, obj);
+      if (item) Object.assign(item, obj, { atualizado_por: 'Você (demonstração)', atualizado_em: new Date().toISOString() });
       this._gravar(d);
       return item;
     },

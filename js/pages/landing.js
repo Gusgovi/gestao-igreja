@@ -1,6 +1,5 @@
-// Página de boas-vindas (landing): primeira tela que aparece ao abrir o site.
-// Mostra o que o sistema faz (com prévias feitas a partir dos dados reais, quando dá para ler)
-// e leva para o login, ou direto para o sistema no modo demonstração.
+// Página de boas-vindas: a "home" pública da igreja, para visitantes e para quem ainda não entrou.
+// Cultos, próximos eventos, pastores e primeiros passos na fé; leva ao cadastro de visitante e ao login.
 (function () {
   const App = window.App;
   const { h, util } = App;
@@ -17,70 +16,68 @@
 
   const VERSICULO = 'Porque três são os que testificam na terra: o Espírito, e a água, e o sangue; e estes três concordam num.';
 
-  // Lê o que der para as prévias. Sem login no Supabase as regras do banco bloqueiam a leitura,
-  // então cada lista cai para vazio e a prévia usa um exemplo.
+  // Só o que é público (eventos, pastores e textos do Aprender): a página é para quem ainda não entrou.
   async function carregarDados() {
     const hoje = util.hoje();
-    const domingo = util.inicioSemana(hoje);
     const ler = (tabela, opts) => App.db.list(tabela, opts).catch(() => []);
-    const [escalas, membros, ministerios, musicas, itens, eventos, pastores] = await Promise.all([
-      ler('escalas', { gte: { data: hoje }, lte: { data: util.somarDias(domingo, 13) }, order: 'data' }),
-      ler('membros'), ler('ministerios'), ler('musicas'), ler('cantina_itens'),
+    const [eventos, pastores, conteudos, sobre] = await Promise.all([
       ler('eventos', { gte: { data: hoje }, order: 'data' }),
       ler('pastores', { order: 'ordem' }),
+      ler('conteudos', { eq: { secao: 'abc' }, order: 'ordem' }),
+      // "Sobre nós" = textos da seção "Nossa igreja" (visão, missão, valores) da área Aprender
+      ler('conteudos', { eq: { secao: 'visao' }, order: 'ordem' }),
     ]);
-    return { escalas, membros, ministerios, musicas, itens, eventos, pastores };
+    return { eventos, pastores, conteudos, sobre };
   }
 
-  // ---------- Prévias de cada área (mini telas dentro dos cards) ----------
-  function previaEscalas({ escalas, membros, ministerios }) {
-    const pm = util.porId(membros), pmin = util.porId(ministerios);
-    const linhas = escalas.slice(0, 4).map((e) => ({
-      dia: util.dataCurta(e.data),
-      ministerio: (pmin[e.ministerio_id] || {}).nome || 'Ministério',
-      cor: (pmin[e.ministerio_id] || {}).cor,
-      pessoa: (pm[e.membro_id] || {}).nome || 'A definir',
-      funcao: e.funcao,
-    }));
-    const exemplo = [
-      { dia: 'Dom', ministerio: 'Louvor', cor: '#7c3aed', pessoa: 'Ana', funcao: 'Vocal' },
-      { dia: 'Dom', ministerio: 'Cantina', cor: '#ea580c', pessoa: 'Carla', funcao: 'Caixa' },
-      { dia: 'Qua', ministerio: 'Portaria', cor: '#0284c7', pessoa: 'Daniel', funcao: 'Recepção' },
-    ];
-    return h('ul.previa-escalas', (linhas.length ? linhas : exemplo).map((l) => h('li',
-      h('span.previa-dia', l.dia),
-      h('span.etiqueta', { style: { background: l.cor || '#3B4F8F' } }, l.ministerio),
-      h('strong', l.pessoa),
-      l.funcao ? h('span.muted', l.funcao) : null)));
+  // Dias e horários dos cultos (js/config.js > CULTOS)
+  function cartaoCulto(c, i) {
+    return h('article.culto-card' + (i % 2 ? '.alt' : ''),
+      h('span.culto-dia', c.dia),
+      h('strong.culto-hora' + (c.hora ? '' : '.sem-hora'), c.hora || 'Horário em breve'),
+      c.nome ? h('span.culto-nome', c.nome) : null);
   }
 
-  function previaLouvor({ musicas }) {
-    const lista = musicas.length ? musicas.slice(0, 3) : [
-      { titulo: 'Bondade de Deus', tom: 'G' }, { titulo: 'Grande é o Senhor', tom: 'D' }, { titulo: 'Lindo És', tom: 'A' },
-    ];
-    return h('ol.previa-setlist', lista.map((m) => h('li', h('span', m.titulo), m.tom ? h('span.tom', m.tom) : null)));
+  // Redes sociais e WhatsApp da igreja (js/config.js), com ícone
+  const ICONES_REDE = {
+    instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r=".6" fill="currentColor"/>',
+    facebook: '<path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V9a.5.5 0 0 1 .5-.5Z"/>',
+    whatsapp: '<path d="M4 20l1.2-3.6A8 8 0 1 1 8 19.1L4 20Z"/><path d="M9 8.5c0 3.3 2.9 6.5 6.5 6.5l1-1.4-2-1-1 .8c-1.3-.5-2.4-1.6-2.9-2.9l.8-1-1-2L9 8.5Z"/>',
+  };
+  function redes(cfg) {
+    const insta = (cfg.INSTAGRAM || '').replace(/^@/, '');
+    const zap = (cfg.WHATSAPP || '').replace(/\D/g, '');
+    const item = (rede, href, texto) => h('a.rede', { href, target: '_blank', rel: 'noopener', 'aria-label': texto },
+      h('span.rede-icone', { 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONES_REDE[rede]}</svg>` }),
+      h('span', texto));
+    const lista = [
+      insta ? item('instagram', 'https://www.instagram.com/' + insta, '@' + insta) : null,
+      cfg.FACEBOOK ? item('facebook', cfg.FACEBOOK, 'Facebook') : null,
+      // wa.me precisa do número com o código do Brasil (55)
+      zap ? item('whatsapp', 'https://wa.me/' + (zap.length <= 11 ? '55' + zap : zap), cfg.WHATSAPP) : null,
+    ].filter(Boolean);
+    return lista.length ? h('nav.redes', { 'aria-label': 'Redes sociais e contato' }, lista) : null;
   }
 
-  function previaCantina({ itens }) {
-    const lista = itens.length ? itens.slice(0, 3) : [{ nome: 'Café', preco: 2.5 }, { nome: 'Bolo', preco: 5 }, { nome: 'Coxinha', preco: 7 }];
-    return h('div.previa-precos', lista.map((i) => h('span.previa-preco', i.nome, h('strong', util.dinheiro(i.preco)))));
-  }
-
-  function previaMembros({ membros }) {
-    const nomes = membros.length ? membros.map((m) => m.nome) : ['Ana Souza', 'Bruno Lima', 'Carla Mendes', 'Daniel Rocha', 'Eduarda Alves'];
-    return h('div.previa-membros',
-      h('div.pilha', nomes.slice(0, 5).map((n) => App.avatar(n))),
-      h('p', h('strong', String(membros.length || nomes.length)), ' pessoas cadastradas'));
+  // Primeiros textos do "ABC do Evangelho", para quem está chegando
+  function cartaoTexto(c, i, destino) {
+    const corpo = (c.corpo || '').split(/\n\s*\n/)[0] || '';
+    const resumo = corpo.length > 140 ? corpo.slice(0, 137).trim() + '…' : corpo;
+    return h('a.texto-card', { href: destino },
+      h('span.texto-num', String(i + 1).padStart(2, '0')),
+      h('strong', c.titulo),
+      resumo ? h('span', resumo) : null);
   }
 
   // ---------- Eventos em cards grandes ----------
   const CORES_EVENTO = ['#1F6FB2', '#2D9CDB', '#3B4F8F', '#0E7490', '#24518F', '#4A5FA8'];
-  function cardEvento(ev, i, destino) {
+  // Toque no card abre o evento em tela cheia, igual aos stories
+  function cardEvento(ev, i, lista) {
     const fundo = ev.imagem_url
       ? { backgroundImage: `linear-gradient(180deg, transparent 35%, rgba(4, 12, 26, .92)), url("${ev.imagem_url.replace(/"/g, '%22')}")` }
       : { backgroundImage: `radial-gradient(120% 80% at 80% 0%, ${CORES_EVENTO[i % CORES_EVENTO.length]}, #0A1628 70%)` };
     const d = util.parse(ev.data);
-    return h('a.evento-grande', { href: destino, style: fundo },
+    return h('button.evento-grande', { type: 'button', style: fundo, onclick: () => App.abrirStories(lista, i) },
       h('span.evento-grande-data', h('strong', String(d.getDate())), h('span', util.dataCurta(ev.data).split(' ')[1])),
       h('span.evento-grande-texto',
         h('strong', ev.titulo),
@@ -120,8 +117,10 @@
     const cfg = window.APP_CONFIG || {};
     const nome = cfg.NOME_IGREJA || 'Igreja';
     const demo = App.db.modo === 'local';
-    const destino = logado || demo ? '#/inicio' : '#/entrar';
-    const textoEntrar = logado || demo ? 'Abrir o sistema' : 'Entrar';
+    const dentro = logado || demo;
+    const destino = dentro ? '#/inicio' : '#/entrar';
+    const cadastro = dentro ? '#/inicio' : '#/cadastro';
+    const cultos = cfg.CULTOS || [{ dia: 'Quarta-feira' }, { dia: 'Domingo' }];
 
     const app = document.getElementById('app');
     app.innerHTML = '';
@@ -132,16 +131,22 @@
 
     const irPara = (id) => (e) => { e.preventDefault(); document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); };
     const proximo = dados.eventos[0];
+    const mapa = cfg.ENDERECO ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(cfg.ENDERECO) : null;
+
+    const acoesTopo = dentro
+      ? h('a.btn.pequeno', { href: '#/inicio' }, 'Abrir o sistema')
+      : [h('a.btn.vidro.pequeno', { href: '#/entrar' }, 'Entrar'), h('a.btn.pequeno', { href: '#/cadastro' }, 'Cadastre-se')];
 
     app.appendChild(h('div.landing',
       h('header.landing-nav',
         h('a.marca', { href: '#/bem-vindo' }, App.logoOnda('mini'), h('span', nome)),
         h('nav.landing-links', { 'aria-label': 'Seções da página' },
-          h('a', { href: '#/bem-vindo', onclick: irPara('o-que-tem') }, 'O que tem'),
+          dados.sobre.length ? h('a', { href: '#/bem-vindo', onclick: irPara('sobre') }, 'Sobre nós') : null,
+          h('a', { href: '#/bem-vindo', onclick: irPara('cultos') }, 'Cultos'),
           dados.eventos.length ? h('a', { href: '#/bem-vindo', onclick: irPara('eventos') }, 'Eventos') : null,
           dados.pastores.length ? h('a', { href: '#/bem-vindo', onclick: irPara('pastores') }, 'Pastores') : null,
-          h('a', { href: '#/bem-vindo', onclick: irPara('como-comecar') }, 'Como começar')),
-        h('a.btn.pequeno', { href: destino }, textoEntrar)),
+          dados.conteudos.length ? h('a', { href: '#/bem-vindo', onclick: irPara('chegando') }, 'Primeiros passos') : null),
+        h('div.landing-nav-acoes', acoesTopo)),
 
       h('main#conteudo.landing-main', { tabindex: '-1' },
         h('section.hero',
@@ -149,66 +154,67 @@
           App.logoOnda('hero-onda'),
           h('div.hero-texto',
             h('p.hero-igreja', 'Igreja ' + nome),
-            h('h1', h('span', 'Quem serve,'), h('span', 'onde e'), h('span', 'quando.')),
-            h('p.hero-sub', 'Escalas, louvor, cantina e membros da igreja num só lugar. Letras grandes, botões fáceis e tudo funcionando no celular.'),
+            h('h1', h('span', 'Um lugar'), h('span', 'para chamar'), h('span', 'de casa.')),
+            h('p.hero-sub', 'Venha conhecer Jesus e a nossa família. Aqui você encontra os horários dos cultos, os próximos eventos e tudo o que acontece na igreja.'),
             h('div.hero-acoes',
-              h('a.btn.grande', { href: destino }, textoEntrar),
-              h('a.btn.vidro.grande', { href: '#/bem-vindo', onclick: irPara('o-que-tem') }, 'Ver o que tem aqui')),
-            demo ? h('p.hero-nota', 'Modo demonstração: dá para testar tudo, os dados ficam só neste navegador.')
-              : !logado ? h('p.hero-nota', 'Primeira vez aqui? ', h('a', { href: '#/cadastro' }, 'Cadastre-se como visitante')) : null),
-          proximo ? h('a.hero-proximo', { href: destino },
+              h('a.btn.grande', { href: '#/bem-vindo', onclick: irPara('cultos') }, 'Venha nos visitar'),
+              h('a.btn.vidro.grande', { href: cadastro }, dentro ? 'Abrir o sistema' : 'Criar minha conta')),
+            demo ? h('p.hero-nota', 'Modo demonstração: dá para testar tudo, os dados ficam só neste navegador.') : null),
+          proximo ? h('a.hero-proximo', { href: '#/bem-vindo', onclick: irPara('eventos') },
             h('span.hero-proximo-rotulo', 'Próximo encontro'),
             h('strong', proximo.titulo),
             h('span', [util.dataLonga(proximo.data), proximo.hora].filter(Boolean).join(' às '))) : null),
 
         faixaCorrendo(),
 
-        h('section#o-que-tem.landing-secao', { 'aria-labelledby': 'titulo-areas' },
+        dados.sobre.length ? h('section#sobre.landing-secao', { 'aria-labelledby': 'titulo-sobre' },
+          h('div.secao-cabeca', h('h2#titulo-sobre', 'Sobre nós')),
+          h('div.sobre', dados.sobre.map((c) => h('article.sobre-item',
+            h('h3', c.titulo),
+            (c.corpo || '').split(/\n\s*\n/).filter(Boolean).map((t) => h('p', t)))))) : null,
+
+        h('section#cultos.landing-secao', { 'aria-labelledby': 'titulo-cultos' },
           h('div.secao-cabeca',
-            h('h2#titulo-areas', 'Tudo da igreja num lugar só'),
-            h('p', 'Cada ministério cuida da sua parte e todo mundo enxerga o que precisa.')),
-          h('div.bento',
-            h('a.bento-card.bento-escalas', { href: destino },
-              h('div.bento-topo', h('span.area-icone', App.icone('escalas')), h('h3', 'Escalas')),
-              h('p', 'Quem serve, onde e quando. Cada ministério monta a sua semana.'),
-              previaEscalas(dados)),
-            h('a.bento-card', { href: destino },
-              h('div.bento-topo', h('span.area-icone', App.icone('louvor')), h('h3', 'Louvor')),
-              h('p', 'Repertório com tom e BPM, e ensaios com a ordem das músicas.'),
-              previaLouvor(dados)),
-            h('a.bento-card', { href: destino },
-              h('div.bento-topo', h('span.area-icone', App.icone('cantina')), h('h3', 'Cantina')),
-              h('p', 'Cardápio com preços e o caixa somando as vendas do dia.'),
-              previaCantina(dados)),
-            h('a.bento-card.bento-largo', { href: destino },
-              h('div.bento-topo', h('span.area-icone', App.icone('membros')), h('h3', 'Membros')),
-              h('p', 'Cadastro simples, busca por nome e aniversariantes do mês.'),
-              previaMembros(dados)))),
+            h('h2#titulo-cultos', 'Nossos cultos'),
+            h('p', 'Você é muito bem-vindo. Chegue um pouco antes, a gente vai te receber na porta.')),
+          h('div.cultos', cultos.map(cartaoCulto),
+            h('article.culto-card.onde',
+              h('span.culto-dia', 'Onde estamos'),
+              h('strong.culto-endereco', cfg.ENDERECO || 'Endereço em breve'),
+              mapa ? h('a.btn.vidro.pequeno', { href: mapa, target: '_blank', rel: 'noopener' }, 'Ver no mapa') : null,
+              cfg.WHATSAPP ? h('a.link', { href: 'https://wa.me/55' + cfg.WHATSAPP.replace(/\D/g, ''), target: '_blank', rel: 'noopener' }, 'WhatsApp: ' + cfg.WHATSAPP) : null))),
 
         dados.eventos.length ? h('section#eventos.landing-secao', { 'aria-labelledby': 'titulo-eventos' },
           h('div.secao-cabeca', h('h2#titulo-eventos', 'Próximos encontros')),
-          h('div.eventos-trilho', dados.eventos.slice(0, 8).map((ev, i) => cardEvento(ev, i, destino)))) : null,
+          h('div.eventos-trilho', dados.eventos.slice(0, 8).map((ev, i, lista) => cardEvento(ev, i, lista)))) : null,
 
         dados.pastores.length ? h('section#pastores.landing-secao', { 'aria-labelledby': 'titulo-pastores' },
           h('div.secao-cabeca', h('h2#titulo-pastores', 'Conheça os pastores')),
           App.cartoesPastores(dados.pastores)) : null,
 
-        h('section#como-comecar.landing-secao.passos-secao', { 'aria-labelledby': 'titulo-passos' },
-          h('div.secao-cabeca', h('h2#titulo-passos', 'Como começar')),
-          h('ol.passos',
-            h('li', h('strong', 'Peça seu acesso à secretaria.'), h('span', 'Ela cadastra você com o seu e-mail. ',
-              demo || logado ? 'Visitante pode criar a própria conta.' : h('a', { href: '#/cadastro' }, 'Visitante pode criar a própria conta.'))),
-            h('li', h('strong', 'Entre com e-mail e senha.'), h('span', 'No celular ou no computador, do jeito que preferir.')),
-            h('li', h('strong', 'Veja quando é a sua vez de servir.'), h('span', 'A tela inicial já mostra as escalas desta semana.')))),
+        dados.conteudos.length ? h('section#chegando.landing-secao', { 'aria-labelledby': 'titulo-chegando' },
+          h('div.secao-cabeca',
+            h('h2#titulo-chegando', 'Chegou agora?'),
+            h('p', 'O ABC do Evangelho explica o básico da fé cristã, de um jeito simples. Crie sua conta para ler tudo.')),
+          h('div.textos', dados.conteudos.slice(0, 3).map((c, i) => cartaoTexto(c, i, dentro ? '#/aprender' : cadastro)))) : null,
 
         h('section.versiculo', { 'aria-label': 'Versículo' },
           h('blockquote', versiculoAnimado(), h('cite', '1 João 5:8')),
-          h('p.versiculo-nota', 'É daqui que vem a onda do nosso logo: azul da água, branco do Espírito e vermelho do sangue.'))),
+          h('p.versiculo-nota', 'É daqui que vem a onda do nosso logo: azul da água, branco do Espírito e vermelho do sangue.')),
+
+        h('section.landing-secao.convite', { 'aria-labelledby': 'titulo-convite' },
+          h('h2#titulo-convite', 'Faça parte da família'),
+          h('p', 'Com a sua conta você acompanha os eventos, as fotos dos cultos, o cardápio da cantina e os textos para quem está começando na fé.'),
+          h('div.hero-acoes',
+            h('a.btn.grande', { href: cadastro }, dentro ? 'Abrir o sistema' : 'Criar minha conta'),
+            dentro ? null : h('a.btn.vidro.grande', { href: '#/entrar' }, 'Já tenho conta')),
+          h('p.convite-nota', 'Serve em algum ministério? Depois de criar a conta, a secretaria libera o seu acesso de membro para ver as escalas.'))),
 
       h('footer.landing-rodape',
         h('div.rodape-linha',
           h('a.marca', { href: '#/bem-vindo' }, App.logoOnda('mini'), h('span', nome)),
-          h('a.btn.pequeno', { href: destino }, textoEntrar)),
+          redes(cfg),
+          h('a.btn.pequeno', { href: destino }, dentro ? 'Abrir o sistema' : 'Entrar')),
         h('p.rodape-gigante', { 'aria-hidden': 'true' }, nome))));
 
     window.scrollTo(0, 0);

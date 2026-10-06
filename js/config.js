@@ -9,4 +9,14 @@ window.APP_CONFIG = {
   SUPABASE_URL: 'https://qvmstuybexoaljopbjpb.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_6d8NGt4SFBn0VLZl4fYyvA_kVU18HWg',
   NOME_IGREJA: 'Paixão Por Jesus',
+  // Aparecem na página de boas-vindas. Deixe a hora vazia ('') para mostrar "Horário em breve".
+  CULTOS: [
+    { dia: 'Quarta-feira', hora: '', nome: 'Culto de quarta' },
+    { dia: 'Domingo', hora: '', nome: 'Culto de domingo' },
+  ],
+  ENDERECO: '',  // ex.: 'Rua Tal, 123 - Bairro, Cidade - UF' (vira um botão "Ver no mapa")
+  // Redes e contato (aparecem no rodapé da página de boas-vindas)
+  INSTAGRAM: 'paixaoporjesus_1', // só o @, sem o endereço
+  FACEBOOK: 'https://www.facebook.com/GrupoJovemPaixaoPorJesus',
+  WHATSAPP: '(21) 99967-8599',
 };

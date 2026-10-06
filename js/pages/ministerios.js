@@ -113,7 +113,8 @@
           podeParticipantes ? h('button.chip-x', { type: 'button', 'aria-label': `Tirar ${p.nome}`, onclick: () => remover(p) }, '✕') : null)))
         : h('p.muted', podeParticipantes
           ? 'Ninguém participa ainda. Adicione as pessoas para facilitar a montagem da escala.'
-          : 'Ninguém participa ainda.')));
+          : 'Ninguém participa ainda.'),
+      App.carimbo([m, ...mm])));
 
     const secEscala = h('section.card', h('h2', '📅 Escala da semana'));
     el.appendChild(secEscala);

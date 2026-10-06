@@ -470,3 +470,36 @@ create policy "midia enviar foto" on storage.objects for insert to authenticated
   with check (bucket_id = 'midia' and (select private.participa_area('mídia')));
 create policy "midia apagar foto" on storage.objects for delete to authenticated
   using (bucket_id = 'midia' and (select private.participa_area('mídia')));
+
+-- =============================================================
+-- "Atualizado por": quem mexeu por último em cada registro e quando.
+-- Preenchido sozinho pelo banco (gatilho), com o nome do membro do login
+-- (ou o nome/e-mail da conta). O site mostra nas janelas de edição.
+-- =============================================================
+create or replace function private.carimbar()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_nome text;
+begin
+  select coalesce(m.nome, p.nome, p.email) into v_nome
+    from public.perfis p left join public.membros m on m.id = p.membro_id
+   where p.id = (select auth.uid());
+  new.atualizado_em := now();
+  -- pelo SQL Editor (sem login) mantém o que já estava
+  new.atualizado_por := coalesce(v_nome, new.atualizado_por);
+  return new;
+end;
+$$;
+revoke execute on function private.carimbar() from public, anon;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['membros', 'ministerios', 'ministerio_membros', 'escalas', 'musicas', 'ensaios',
+    'ensaio_musicas', 'ensaios_fixos', 'cantina_itens', 'eventos', 'conteudos', 'pastores', 'midia_fotos'] loop
+    execute format('alter table public.%I add column if not exists atualizado_por text', t);
+    execute format('alter table public.%I add column if not exists atualizado_em timestamptz', t);
+    execute format('drop trigger if exists carimbar on public.%I', t);
+    execute format('create trigger carimbar before insert or update on public.%I for each row execute function private.carimbar()', t);
+  end loop;
+end $$;

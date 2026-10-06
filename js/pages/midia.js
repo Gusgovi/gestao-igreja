@@ -101,7 +101,7 @@
       const f = fotos[i];
       img.src = f.url;
       img.alt = f.legenda || 'Foto do culto de ' + util.dataLonga(f.data);
-      legenda.textContent = [util.dataLonga(f.data), f.legenda].filter(Boolean).join(' · ');
+      legenda.textContent = [util.dataLonga(f.data), f.legenda, f.atualizado_por ? 'enviada por ' + f.atualizado_por : null].filter(Boolean).join(' · ');
       contador.textContent = `${i + 1} de ${fotos.length}`;
       abrir.href = f.url;
       anterior.disabled = i === 0;

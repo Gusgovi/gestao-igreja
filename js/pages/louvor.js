@@ -174,7 +174,7 @@
       const apagar = form.querySelector('.btn.perigo');
       if (apagar) apagar.textContent = 'Cancelar este dia';
     }
-    m = App.modal(novo ? 'Marcar ensaio avulso' : 'Editar ensaio', form);
+    m = App.modal(novo ? 'Marcar ensaio avulso' : 'Editar ensaio', [e.virtual ? null : App.carimbo(e), form]);
   }
 
   async function abaEnsaios(el, recarregar) {
@@ -251,7 +251,8 @@
           h('div',
             h('h2', titulo, e.fixo_id ? h('span.selo', 'Fixo') : null),
             e.culto_data ? h('p.culto-alvo', '🎤 Músicas para o culto de ' + util.dataLonga(e.culto_data).toLowerCase()) : null,
-            e.local ? h('p.muted', '📍 ' + e.local) : null),
+            e.local ? h('p.muted', '📍 ' + e.local) : null,
+            App.carimbo(e.virtual ? [] : [e, ...lista])),
           podeEnsaios ? h('button.btn.secundario.pequeno', { type: 'button', onclick: () => editarEnsaio(e, recarregar) }, '✎ Editar') : null),
         e.observacoes ? h('p.obs', e.observacoes) : null,
         lista.length ? h('ol.setlist', lista.map((x, i) => {

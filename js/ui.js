@@ -186,7 +186,20 @@
         depois && depois();
       } : null,
     });
-    m = modal(titulo, form);
+    m = modal(titulo, [registro ? carimbo(registro) : null, form]);
+  }
+
+  // "Última alteração: Fulano · 5 out, 14:30" — o banco grava quem mexeu por último (atualizado_por/em).
+  // Recebe um registro ou uma lista (mostra o mais recente).
+  function carimbo(itens, rotulo = 'Última alteração') {
+    const lista = [].concat(itens).filter((x) => x && x.atualizado_em);
+    // sem registro: nó vazio, para poder usar direto em appendChild
+    if (!lista.length) return document.createTextNode('');
+    const u = lista.reduce((a, b) => (new Date(a.atualizado_em) > new Date(b.atualizado_em) ? a : b));
+    const d = new Date(u.atualizado_em);
+    const z = (n) => String(n).padStart(2, '0');
+    return h('p.carimbo', `${rotulo}: `, h('strong', u.atualizado_por || 'alguém'),
+      ` · ${d.getDate()} ${MESES[d.getMonth()]}, ${z(d.getHours())}:${z(d.getMinutes())}`);
   }
 
   function cabecalho(titulo, subtitulo, ...acoes) {
@@ -209,5 +222,5 @@
       }, texto)));
   }
 
-  Object.assign(App, { util, h, avatar, vazio, toast, modal, confirmar, formulario, editarRegistro, cabecalho, busca, abas });
+  Object.assign(App, { util, h, avatar, vazio, toast, modal, confirmar, formulario, editarRegistro, carimbo, cabecalho, busca, abas });
 })();

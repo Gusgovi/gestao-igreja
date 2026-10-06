@@ -125,68 +125,44 @@ main.landing-main { margin: 0; padding: 0; max-width: none; flex: 1; }
 .secao-cabeca h2 { font-size: clamp(2.2rem, 5.5vw, 4.2rem); line-height: .95; letter-spacing: -.035em; max-width: 14ch; }
 .secao-cabeca p { color: var(--texto-suave); max-width: 26rem; margin: 0; font-size: 1.08rem; }
 
-/* Bento: cards grandes com uma mini tela de cada área */
-.bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-.bento-card {
-  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: .5rem;
-  padding: 1.5rem; border-radius: 28px; min-height: 300px; text-decoration: none; color: var(--texto);
-  background: linear-gradient(160deg, var(--superficie-2), var(--superficie) 60%);
+/* Cultos: dia, horário e onde estamos */
+.cultos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 1rem; }
+.culto-card {
+  display: flex; flex-direction: column; gap: .5rem; padding: 1.6rem 1.5rem; border-radius: 28px; min-height: 220px;
+  background: radial-gradient(120% 90% at 100% 0%, rgba(77, 179, 238, .35), transparent 60%), var(--superficie);
   border: 1px solid var(--borda);
-  transition: transform .25s cubic-bezier(.2, .7, .2, 1), border-color .25s;
 }
-.bento-card::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s;
-  background: radial-gradient(70% 60% at 85% 0%, rgba(77, 179, 238, .22), transparent 70%);
-}
-.bento-card:hover { transform: translateY(-4px); border-color: rgba(77, 179, 238, .5); }
-.bento-card:hover::before { opacity: 1; }
-.bento-card > p { color: var(--texto-suave); margin: 0 0 .75rem; max-width: 30rem; }
-.bento-topo { display: flex; align-items: center; gap: .75rem; }
-.bento-topo h3 { font-size: 1.5rem; letter-spacing: -.02em; }
-.bento-escalas { grid-row: span 2; }
-.bento-largo { grid-column: span 2; }
-.area-icone {
-  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; display: grid; place-items: center;
-  background: var(--primaria-suave); color: var(--primaria); font-size: 1.5rem;
-}
-@media (max-width: 900px) {
-  .bento { grid-template-columns: 1fr; }
-  .bento-escalas { grid-row: auto; }
-  .bento-largo { grid-column: auto; }
-  .bento-card { min-height: 0; }
-}
+.culto-card.alt { background: radial-gradient(120% 90% at 100% 0%, rgba(239, 59, 63, .28), transparent 60%), var(--superficie); }
+.culto-card.onde { background: var(--superficie-2); }
+.culto-dia { color: var(--primaria); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .85rem; }
+.culto-hora { font-family: var(--fonte-titulo); font-weight: 800; font-size: clamp(2.4rem, 5vw, 3.4rem); line-height: 1; letter-spacing: -.03em; margin-top: auto; }
+.culto-hora.sem-hora { font-size: clamp(1.5rem, 3vw, 2rem); }
+.culto-nome { color: var(--texto-suave); font-size: 1.05rem; }
+.culto-endereco { font-family: var(--fonte-titulo); font-size: 1.4rem; line-height: 1.2; margin-top: auto; }
+.culto-card .btn { align-self: flex-start; border-radius: 999px; margin-top: .5rem; }
 
-/* Mini telas dentro dos cards */
-.previa-escalas, .previa-setlist { list-style: none; margin: auto 0 0; padding: 0; display: grid; gap: .5rem; }
-.previa-escalas li {
-  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
-  padding: .7rem .8rem; border-radius: 14px; background: rgba(10, 22, 40, .6); border: 1px solid var(--borda);
+/* Primeiros passos: textos do ABC do Evangelho */
+.textos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 1rem; }
+.texto-card {
+  display: flex; flex-direction: column; gap: .5rem; padding: 1.5rem; border-radius: 24px; text-decoration: none; color: var(--texto);
+  background: var(--superficie); border: 1px solid var(--borda); transition: transform .25s cubic-bezier(.2, .7, .2, 1), border-color .25s;
 }
-.previa-dia {
-  font-weight: 700; font-size: .8rem; color: var(--fundo); background: var(--texto);
-  border-radius: 8px; padding: .1rem .45rem; min-width: 3.4rem; text-align: center;
-}
-.bento-escalas .previa-escalas { margin-top: .25rem; }
-.previa-setlist { counter-reset: musica; }
-.previa-setlist li {
-  counter-increment: musica; display: flex; align-items: center; gap: .6rem; justify-content: space-between;
-  padding: .55rem .8rem; border-radius: 12px; background: rgba(10, 22, 40, .6);
-}
-.previa-setlist li::before { content: counter(musica); color: var(--primaria); font-weight: 700; width: 1rem; }
-.previa-setlist li > span:first-of-type { flex: 1; }
-.previa-precos { margin-top: auto; display: flex; flex-wrap: wrap; gap: .5rem; }
-.previa-preco {
-  display: inline-flex; flex-direction: column; padding: .6rem .9rem; border-radius: 14px;
-  background: rgba(10, 22, 40, .6); border: 1px solid var(--borda); font-size: .9rem; color: var(--texto-suave);
-}
-.previa-preco strong { color: var(--ok); font-size: 1.1rem; }
-.previa-membros { margin-top: auto; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.previa-membros p { margin: 0; color: var(--texto-suave); }
-.previa-membros p strong { color: var(--texto); font-family: var(--fonte-titulo); font-size: 1.6rem; }
-.pilha { display: flex; }
-.pilha .avatar { width: 48px; height: 48px; border: 3px solid var(--superficie); background: var(--superficie-2); margin-left: -12px; }
-.pilha .avatar:first-child { margin-left: 0; }
-.pilha .avatar:nth-child(odd) { background: #24518F; }
+.texto-card:hover { transform: translateY(-4px); border-color: rgba(77, 179, 238, .5); }
+.texto-num { font-family: var(--fonte-titulo); font-weight: 800; font-size: 2.6rem; line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--primaria); }
+.texto-card strong { font-family: var(--fonte-titulo); font-size: 1.35rem; }
+.texto-card span:last-child { color: var(--texto-suave); }
+
+/* Convite final */
+.convite { text-align: center; background: var(--superficie); border-radius: 36px; margin: 0 clamp(.5rem, 2vw, 1.5rem) clamp(2rem, 5vw, 4rem); }
+.convite h2 { font-size: clamp(2.2rem, 5.5vw, 4.2rem); line-height: .95; letter-spacing: -.035em; }
+.convite > p { color: var(--texto-suave); max-width: 36rem; margin: 1.25rem auto 2rem; font-size: 1.1rem; }
+.convite .hero-acoes { justify-content: center; }
+.convite .convite-nota { font-size: .95rem; margin-top: 1.5rem; margin-bottom: 0; }
+
+/* Botões do menu da página */
+.landing-nav-acoes { display: flex; gap: .4rem; }
+button.evento-grande { font: inherit; text-align: left; cursor: pointer; }
+@media (max-width: 420px) { .landing-nav .marca > span:not(.logo-onda) { display: none; } }
 
 /* Eventos em cards altos, rolando de lado */
 .eventos-trilho {
@@ -211,18 +187,6 @@ main.landing-main { margin: 0; padding: 0; max-width: none; flex: 1; }
 .evento-grande-texto { display: grid; gap: .25rem; }
 .evento-grande-texto strong { font-family: var(--fonte-titulo); font-size: 1.6rem; line-height: 1.05; letter-spacing: -.02em; }
 .evento-grande-texto span { color: rgba(255, 255, 255, .8); }
-
-/* Passos */
-.passos-secao { background: var(--superficie); border-radius: 36px; margin: 0 clamp(.5rem, 2vw, 1.5rem); }
-.passos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; counter-reset: passo; }
-.passos li { counter-increment: passo; display: flex; flex-direction: column; gap: .35rem; }
-.passos li::before {
-  content: counter(passo); font-family: var(--fonte-titulo); font-weight: 800; font-size: 3.5rem; line-height: 1;
-  color: transparent; -webkit-text-stroke: 1.5px var(--primaria); margin-bottom: .75rem;
-}
-.passos strong { font-size: 1.2rem; }
-.passos span { color: var(--texto-suave); }
-@media (max-width: 760px) { .passos { grid-template-columns: 1fr; } }
 
 /* Versículo que acende ao rolar */
 .versiculo { padding: clamp(5rem, 12vw, 9rem) clamp(1rem, 5vw, 4.5rem); }
@@ -263,3 +227,24 @@ main.landing-main { margin: 0; padding: 0; max-width: none; flex: 1; }
   .palavra { color: var(--texto); }
 }
 .hero-nota a { color: var(--texto); font-weight: 700; }
+
+/* Sobre nós: visão, missão e valores (textos da seção "Nossa igreja" do Aprender) */
+.sobre { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 1rem 2.5rem; }
+.sobre-item { border-top: 2px solid var(--primaria); padding-top: 1.1rem; }
+.sobre-item h3 { font-size: 1.6rem; letter-spacing: -.02em; margin-bottom: .6rem; }
+.sobre-item p { color: var(--texto-suave); font-size: 1.08rem; margin: 0 0 .75rem; }
+
+/* Rodapé: Instagram, Facebook e WhatsApp */
+.redes { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rede {
+  display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .45rem .95rem .45rem .6rem;
+  border-radius: 999px; border: 1px solid var(--borda); background: var(--superficie);
+  color: var(--texto); text-decoration: none; font-weight: 700; font-size: .95rem;
+}
+.rede:hover { border-color: var(--primaria); }
+.rede-icone svg { width: 22px; height: 22px; display: block; color: var(--primaria); }
+@media (max-width: 600px) { .redes { width: 100%; order: 3; } .rede { flex: 1 1 auto; justify-content: center; } }
+/* menu com mais links: sem quebrar linha; em telas médias os links somem (ficam Entrar e Cadastre-se) */
+.landing-nav { width: min(1120px, calc(100% - 24px)); }
+.landing-nav .marca span, .landing-links a { white-space: nowrap; }
+@media (max-width: 1060px) { .landing-links { display: none; } }
