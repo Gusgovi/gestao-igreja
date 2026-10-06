@@ -11,10 +11,10 @@ window.APP_CONFIG = {
   NOME_IGREJA: 'Paixão Por Jesus',
   // Aparecem na página de boas-vindas. Deixe a hora vazia ('') para mostrar "Horário em breve".
   CULTOS: [
-    { dia: 'Quarta-feira', hora: '', nome: 'Culto de quarta' },
-    { dia: 'Domingo', hora: '', nome: 'Culto de domingo' },
+    { dia: 'Quarta-feira', hora: '20:00', nome: 'Culto de ensino' },
+    { dia: 'Domingo', hora: '19:00', nome: 'Culto de adoração' },
   ],
-  ENDERECO: '',  // ex.: 'Rua Tal, 123 - Bairro, Cidade - UF' (vira um botão "Ver no mapa")
+  ENDERECO: 'Rua General Castrioto, 224 - Barreto, Niterói - RJ',  // ex.: 'Rua Tal, 123 - Bairro, Cidade - UF' (vira um botão "Ver no mapa")
   // Redes e contato (aparecem no rodapé da página de boas-vindas)
   INSTAGRAM: 'paixaoporjesus_1', // só o @, sem o endereço
   FACEBOOK: 'https://www.facebook.com/GrupoJovemPaixaoPorJesus',
