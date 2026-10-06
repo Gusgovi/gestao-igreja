@@ -198,6 +198,17 @@
             h('p', 'O ABC do Evangelho explica o básico da fé cristã, de um jeito simples. Crie sua conta para ler tudo.')),
           h('div.textos', dados.conteudos.slice(0, 3).map((c, i) => cartaoTexto(c, i, dentro ? '#/aprender' : cadastro)))) : null,
 
+        h('section#como-comecar.landing-secao.passos-secao', { 'aria-labelledby': 'titulo-passos' },
+          h('div.secao-cabeca', h('h2#titulo-passos', 'Como começar')),
+          h('ol.passos',
+            h('li', h('strong', 'Conheça a igreja.'),
+              h('span', 'Dê uma olhada em quem somos, no que acreditamos e em quem cuida da nossa casa. Fique à vontade.')),
+            h('li', h('strong', 'Crie a sua conta.'),
+              h('span', 'É rapidinho: só nome, e-mail e senha. ',
+                dentro ? null : h('a', { href: '#/cadastro' }, 'Criar minha conta'))),
+            h('li', h('strong', 'Acompanhe tudo por aqui.'),
+              h('span', 'Eventos, fotos dos cultos, o cardápio da cantina e os textos para quem está começando na fé.')))),
+
         h('section.versiculo', { 'aria-label': 'Versículo' },
           h('blockquote', versiculoAnimado(), h('cite', '1 João 5:8')),
           h('p.versiculo-nota', 'É daqui que vem a onda do nosso logo: azul da água, branco do Espírito e vermelho do sangue.')),
