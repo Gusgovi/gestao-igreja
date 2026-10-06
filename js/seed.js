@@ -116,6 +116,6 @@
     ].map((p) => ({ id: id('pas'), foto_url: '', texto: 'Texto provisório. A liderança vai escrever um pouco sobre a história e o chamado do pastor.', created_at: agora, ...p }));
 
     return { membros, ministerios, ministerio_membros, escalas, musicas, ensaios: [ensaio], ensaio_musicas,
-      cantina_itens, cantina_vendas, eventos, conteudos, pastores, midia_fotos: [], ensaios_fixos: [fixo] };
+      cantina_itens, cantina_vendas, eventos, conteudos, pastores, midia_fotos: [], midia_videos: [], ministerio_links: [], ensaios_fixos: [fixo] };
   };
 })();

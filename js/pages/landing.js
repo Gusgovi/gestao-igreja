@@ -44,7 +44,9 @@
     facebook: '<path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V9a.5.5 0 0 1 .5-.5Z"/>',
     whatsapp: '<path d="M4 20l1.2-3.6A8 8 0 1 1 8 19.1L4 20Z"/><path d="M9 8.5c0 3.3 2.9 6.5 6.5 6.5l1-1.4-2-1-1 .8c-1.3-.5-2.4-1.6-2.9-2.9l.8-1-1-2L9 8.5Z"/>',
   };
-  function redes(cfg) {
+  // Botões das redes (js/config.js). Também usados na tela Mídia: App.redes({ zap: false }).
+  App.redes = function ({ zap: comZap = true } = {}) {
+    const cfg = window.APP_CONFIG || {};
     const insta = (cfg.INSTAGRAM || '').replace(/^@/, '');
     const zap = (cfg.WHATSAPP || '').replace(/\D/g, '');
     const item = (rede, href, texto) => h('a.rede', { href, target: '_blank', rel: 'noopener', 'aria-label': texto },
@@ -54,10 +56,10 @@
       insta ? item('instagram', 'https://www.instagram.com/' + insta, '@' + insta) : null,
       cfg.FACEBOOK ? item('facebook', cfg.FACEBOOK, 'Facebook') : null,
       // wa.me precisa do número com o código do Brasil (55)
-      zap ? item('whatsapp', 'https://wa.me/' + (zap.length <= 11 ? '55' + zap : zap), cfg.WHATSAPP) : null,
+      comZap && zap ? item('whatsapp', 'https://wa.me/' + (zap.length <= 11 ? '55' + zap : zap), cfg.WHATSAPP) : null,
     ].filter(Boolean);
-    return lista.length ? h('nav.redes', { 'aria-label': 'Redes sociais e contato' }, lista) : null;
-  }
+    return lista.length ? h('nav.redes', { 'aria-label': comZap ? 'Redes sociais e contato' : 'Redes sociais' }, lista) : null;
+  };
 
   // Primeiros textos do "ABC do Evangelho", para quem está chegando
   function cartaoTexto(c, i, destino) {
@@ -153,7 +155,7 @@
           h('div.hero-brilho', { 'aria-hidden': 'true' }),
           App.logoOnda('hero-onda'),
           h('div.hero-texto',
-            h('p.hero-igreja', 'Igreja ' + nome),
+            h('div.hero-topo', h('p.hero-igreja', 'Igreja ' + nome), App.redes({ zap: false })),
             h('h1', h('span', 'Um lugar'), h('span', 'para chamar'), h('span', 'de casa.')),
             h('p.hero-sub', 'Venha conhecer Jesus e a nossa família. Aqui você encontra os horários dos cultos, os próximos eventos e tudo o que acontece na igreja.'),
             h('div.hero-acoes',
@@ -224,7 +226,7 @@
       h('footer.landing-rodape',
         h('div.rodape-linha',
           h('a.marca', { href: '#/bem-vindo' }, App.logoOnda('mini'), h('span', nome)),
-          redes(cfg),
+          App.redes(),
           h('a.btn.pequeno', { href: destino }, dentro ? 'Abrir o sistema' : 'Entrar')),
         h('p.rodape-gigante', { 'aria-hidden': 'true' }, nome))));
 

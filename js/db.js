@@ -229,7 +229,7 @@
   App.pode = function (perfil, tabela, registro = {}) {
     if (!perfil || perfil.papel === 'pendente' || perfil.papel === 'visitante') return false;
     if (perfil.papel === 'admin') return true;
-    if (tabela === 'ministerio_membros') return perfil.lidera.includes(registro.ministerio_id);
+    if (tabela === 'ministerio_membros' || tabela === 'ministerio_links') return perfil.lidera.includes(registro.ministerio_id);
     // quem participa do Louvor também monta a escala do Louvor
     if (tabela === 'escalas') return [...perfil.lidera, ...(perfil.escala || [])].includes(registro.ministerio_id);
     // quem participa do Louvor (não só o líder) cadastra músicas e marca ensaios
@@ -237,7 +237,7 @@
     // quem participa da Cantina (não só o líder) lança vendas no caixa
     if (tabela === 'cantina_vendas' && (perfil.participa || []).includes('cantina')) return true;
     // quem participa da Mídia (não só o líder) envia e apaga as fotos do culto
-    if (tabela === 'midia_fotos') return [...perfil.areas, ...(perfil.participa || [])].some((a) => App.util.normalizar(a) === 'midia');
+    if (tabela === 'midia_fotos' || tabela === 'midia_videos') return [...perfil.areas, ...(perfil.participa || [])].some((a) => App.util.normalizar(a) === 'midia');
     if (AREA[tabela]) return perfil.areas.includes(AREA[tabela]);
     return false; // membros, ministérios, eventos, conteúdos e pastores: só admin
   };

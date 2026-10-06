@@ -609,3 +609,30 @@ body::before {
 /* "Última alteração: Fulano" */
 .carimbo { font-size: .85rem; color: var(--texto-suave); margin: .25rem 0 .75rem; }
 .carimbo strong { color: var(--texto); }
+
+/* Mídia: vídeos por link (player do YouTube, Instagram ou Facebook) */
+.videos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 1rem; margin-top: 1rem; align-items: start; }
+.video { margin: 0; background: var(--superficie-2); border-radius: var(--raio-p); overflow: hidden; }
+.video iframe { display: block; width: 100%; border: 0; background: #000; aspect-ratio: 16 / 9; }
+.video.vertical iframe { aspect-ratio: 9 / 14; max-height: 640px; }
+.video figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1rem; padding: .6rem .8rem; }
+.video figcaption span { flex: 1; font-weight: 700; }
+.perigo-texto { color: var(--perigo); }
+/* Instagram não toca dentro do site: cartão que abre o vídeo lá */
+.video-insta {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; text-align: center;
+  aspect-ratio: 16 / 9; padding: 1rem; color: #fff; text-decoration: none;
+  background: linear-gradient(135deg, #833ab4, #fd1d1d 55%, #fcb045);
+}
+.video-insta-play { width: 56px; height: 56px; border-radius: 999px; display: grid; place-items: center; font-size: 1.4rem; background: rgba(0, 0, 0, .35); }
+.video-insta strong { font-size: 1.15rem; }
+.video-insta span:last-child { opacity: .9; font-size: .9rem; }
+
+/* Links internos da Mídia (Google Drive) */
+.links-min { margin-top: 1.25rem; }
+.lista-links { list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
+.lista-links li { display: flex; align-items: center; gap: .75rem; }
+.links-nota { font-size: .85rem; margin: .9rem 0 0; }
+
+/* Mídia: link para Instagram e Facebook da igreja */
+.midia-redes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: -.25rem 0 1.25rem; }

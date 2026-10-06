@@ -225,6 +225,16 @@ create table if not exists public.midia_fotos (
   created_at timestamptz not null default now()
 );
 create index if not exists midia_fotos_data_idx on public.midia_fotos (data desc);
+-- Vídeos dos cultos: só o link (YouTube, Instagram ou Facebook). O vídeo fica lá,
+-- e o site mostra o player; não gasta espaço do Supabase.
+create table if not exists public.midia_videos (
+  id uuid primary key default gen_random_uuid(),
+  data date not null default current_date,
+  link text not null check (link ~* '^https://'),
+  legenda text,
+  created_at timestamptz not null default now()
+);
+create index if not exists midia_videos_data_idx on public.midia_videos (data desc);
 
 -- =============================================================
 -- Funções de apoio às regras de segurança
@@ -382,7 +392,7 @@ grant select, insert, update, delete on
   public.membros, public.ministerios, public.ministerio_membros, public.escalas,
   public.musicas, public.ensaios, public.ensaio_musicas, public.ensaios_fixos,
   public.cantina_itens, public.cantina_vendas, public.eventos, public.conteudos,
-  public.pastores, public.midia_fotos
+  public.pastores, public.midia_fotos, public.midia_videos
   to authenticated;
 grant select, update on public.perfis to authenticated;
 grant select on public.eventos, public.conteudos, public.pastores to anon;
@@ -415,7 +425,8 @@ begin
       ('eventos',            'true',                               '(select private.eh_admin())'),
       ('conteudos',          'true',                               '(select private.eh_admin())'),
       ('pastores',           'true',                               '(select private.eh_admin())'),
-      ('midia_fotos',        '(select private.logado())',          '(select private.participa_area(''mídia''))')
+      ('midia_fotos',        '(select private.logado())',          '(select private.participa_area(''mídia''))'),
+      ('midia_videos',       '(select private.logado())',          '(select private.participa_area(''mídia''))')
     ) as t(tabela, ler, escrever)
   loop
     execute format('alter table public.%I enable row level security', r.tabela);
@@ -496,10 +507,50 @@ do $$
 declare t text;
 begin
   foreach t in array array['membros', 'ministerios', 'ministerio_membros', 'escalas', 'musicas', 'ensaios',
-    'ensaio_musicas', 'ensaios_fixos', 'cantina_itens', 'eventos', 'conteudos', 'pastores', 'midia_fotos'] loop
+    'ensaio_musicas', 'ensaios_fixos', 'cantina_itens', 'eventos', 'conteudos', 'pastores', 'midia_fotos', 'midia_videos'] loop
     execute format('alter table public.%I add column if not exists atualizado_por text', t);
     execute format('alter table public.%I add column if not exists atualizado_em timestamptz', t);
     execute format('drop trigger if exists carimbar on public.%I', t);
     execute format('create trigger carimbar before insert or update on public.%I for each row execute function private.carimbar()', t);
   end loop;
 end $$;
+
+-- =============================================================
+-- Links internos de um ministério (ex.: pasta do Google Drive da Mídia).
+-- Só quem participa do ministério vê o link; só o líder (ou admin) cadastra.
+-- A pasta em si continua protegida pelo compartilhamento do próprio Google Drive.
+-- =============================================================
+create or replace function private.participa(p_ministerio uuid)
+returns boolean language sql stable security definer set search_path = '' as $$
+  select private.lidera(p_ministerio) or exists (
+    select 1
+    from public.ministerio_membros mm
+    join public.perfis p on p.membro_id = mm.membro_id
+    where mm.ministerio_id = p_ministerio and p.id = (select auth.uid()) and p.papel <> 'pendente'
+  );
+$$;
+revoke execute on function private.participa(uuid) from public, anon;
+grant execute on function private.participa(uuid) to authenticated;
+
+create table if not exists public.ministerio_links (
+  id uuid primary key default gen_random_uuid(),
+  ministerio_id uuid not null references public.ministerios(id) on delete cascade,
+  titulo text not null check (length(trim(titulo)) > 0),
+  url text not null check (url ~* '^https://'),
+  created_at timestamptz not null default now(),
+  atualizado_por text,
+  atualizado_em timestamptz
+);
+create index if not exists ministerio_links_min_idx on public.ministerio_links (ministerio_id);
+grant select, insert, update, delete on public.ministerio_links to authenticated;
+alter table public.ministerio_links enable row level security;
+drop policy if exists "ler" on public.ministerio_links;
+drop policy if exists "criar" on public.ministerio_links;
+drop policy if exists "editar" on public.ministerio_links;
+drop policy if exists "apagar" on public.ministerio_links;
+create policy "ler" on public.ministerio_links for select to authenticated using (private.participa(ministerio_id));
+create policy "criar" on public.ministerio_links for insert to authenticated with check (private.lidera(ministerio_id));
+create policy "editar" on public.ministerio_links for update to authenticated using (private.lidera(ministerio_id)) with check (private.lidera(ministerio_id));
+create policy "apagar" on public.ministerio_links for delete to authenticated using (private.lidera(ministerio_id));
+drop trigger if exists carimbar on public.ministerio_links;
+create trigger carimbar before insert or update on public.ministerio_links for each row execute function private.carimbar();

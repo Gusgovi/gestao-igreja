@@ -1,4 +1,4 @@
-// Mídia: fotos tiradas nos cultos e quem serve na Mídia e no Som.
+// Mídia: fotos e vídeos dos cultos e quem serve na Mídia e no Som.
 // As fotos ficam no Supabase Storage (bucket "midia"); no modo demonstração, no navegador.
 (function () {
   const App = window.App;
@@ -151,33 +151,159 @@
     el.appendChild(h('div.quem-serve', cards));
   }
 
+  // Vídeos por link: desligado por enquanto, a pedido da igreja (true liga de novo).
+  const MOSTRAR_VIDEOS = false;
+
+  // ---------- Vídeos por link (YouTube, Instagram, Facebook) ----------
+  // O vídeo continua hospedado lá; aqui só guardamos o link e mostramos o player.
+  // Devolve { src, formato } para o <iframe>, ou null se o link não for reconhecido.
+  function embutir(link) {
+    let u;
+    try { u = new URL(link.trim()); } catch (e) { return null; }
+    const host = u.hostname.replace(/^www\.|^m\./, '');
+    if (host === 'youtu.be' || host.endsWith('youtube.com')) {
+      const id = host === 'youtu.be' ? u.pathname.slice(1)
+        : u.searchParams.get('v') || (u.pathname.match(/^\/(?:shorts|live|embed)\/([^/?]+)/) || [])[1];
+      if (!id || !/^[\w-]{6,}$/.test(id)) return null;
+      return { src: 'https://www.youtube-nocookie.com/embed/' + id, formato: u.pathname.startsWith('/shorts') ? 'vertical' : 'largo' };
+    }
+    if (host.endsWith('instagram.com')) {
+      // O Instagram não deixa mais tocar o vídeo dentro de outros sites para quem não está logado
+      // (manda para a tela de login). Então mostramos um cartão que abre o vídeo no Instagram.
+      if (!/^\/(?:[\w.]+\/)?(p|reel|reels|tv)\/[\w-]+/.test(u.pathname)) return null;
+      return { src: null, formato: 'instagram' };
+    }
+    if (host.endsWith('facebook.com') || host === 'fb.watch') {
+      return { src: 'https://www.facebook.com/plugins/video.php?show_text=false&href=' + encodeURIComponent(u.href), formato: 'largo' };
+    }
+    return null;
+  }
+
+  function adicionarVideo(depois) {
+    let m;
+    const form = App.formulario([
+      { nome: 'data', rotulo: 'Dia do culto', tipo: 'date', obrigatorio: true, padrao: ultimoDomingo() },
+      { nome: 'link', rotulo: 'Link do vídeo', tipo: 'url', obrigatorio: true, exemplo: 'https://',
+        ajuda: 'Do YouTube, do Instagram (post ou reels) ou do Facebook. No app, toque em Compartilhar > Copiar link. O vídeo precisa estar público.' },
+      { nome: 'legenda', rotulo: 'Legenda (opcional)', exemplo: 'Ex.: Ministração do pastor' },
+    ], {}, {
+      textoSalvar: 'Adicionar',
+      aoSalvar: async (dados) => {
+        if (!embutir(dados.link)) throw new Error('esse link não é de um vídeo do YouTube, do Instagram ou do Facebook.');
+        await App.db.insert('midia_videos', dados);
+        m.fechar(); App.toast('Vídeo adicionado.'); depois();
+      },
+    });
+    m = App.modal('Adicionar vídeo', form);
+  }
+
+  function listaVideos(videos, podeApagar, depois) {
+    if (!videos.length) return null;
+    return h('div.videos', videos.map((v) => {
+      const e = embutir(v.link);
+      return h('figure.video' + (e ? '.' + e.formato : ''),
+        e && !e.src ? h('a.video-insta', { href: v.link, target: '_blank', rel: 'noopener' },
+          h('span.video-insta-play', { 'aria-hidden': 'true' }, '▶'),
+          h('strong', 'Assistir no Instagram'),
+          h('span', 'O vídeo abre no app ou no site do Instagram.'))
+        : e ? h('iframe', { src: e.src, title: v.legenda || 'Vídeo do culto', loading: 'lazy', allowfullscreen: true,
+          allow: 'autoplay; encrypted-media; picture-in-picture; clipboard-write; web-share', referrerpolicy: 'strict-origin-when-cross-origin' })
+          : h('p.muted', 'Não deu para mostrar este vídeo.'),
+        h('figcaption',
+          h('span', v.legenda || 'Vídeo do culto'),
+          h('a.link', { href: v.link, target: '_blank', rel: 'noopener' }, 'Abrir no app'),
+          podeApagar ? h('button.link.perigo-texto', { type: 'button', onclick: async () => {
+            if (!(await App.confirmar('Tirar este vídeo da Mídia? O vídeo continua no YouTube/Instagram/Facebook.', 'Sim, tirar'))) return;
+            await App.db.remove('midia_videos', v.id);
+            App.toast('Vídeo tirado.'); depois();
+          } }, 'Tirar') : null));
+    }));
+  }
+
+  // ---------- Links internos da Mídia (ex.: pasta do Google Drive) ----------
+  // O banco só mostra o link para quem participa da Mídia (ministerio_links).
+  // A pasta em si é protegida pelo compartilhamento do Google Drive.
+  async function linksDaMidia(el, recarregar) {
+    const ministerios = await App.db.list('ministerios');
+    const mi = ministerios.find((m) => util.normalizar(m.nome) === 'midia');
+    if (!mi) return;
+    const links = await App.db.list('ministerio_links', { eq: { ministerio_id: mi.id }, order: 'titulo' });
+    const pode = App.posso('ministerio_links', { ministerio_id: mi.id });
+    if (!links.length && !pode) return; // quem não é da Mídia não vê nada
+    const editar = (link) => {
+      let m;
+      const form = App.formulario([
+        { nome: 'titulo', rotulo: 'Nome', obrigatorio: true, padrao: 'Fotos dos cultos (Google Drive)' },
+        { nome: 'url', rotulo: 'Link', tipo: 'url', obrigatorio: true, exemplo: 'https://drive.google.com/…',
+          ajuda: 'No Google Drive, abra a pasta, toque em Compartilhar e copie o link. Deixe o acesso como "Restrito" e adicione o e-mail de quem é da Mídia.' },
+      ], link || {}, {
+        aoSalvar: async (dados) => {
+          if (!/^https:\/\//i.test(dados.url)) throw new Error('o link precisa começar com https://');
+          if (link) await App.db.update('ministerio_links', link.id, dados);
+          else await App.db.insert('ministerio_links', { ...dados, ministerio_id: mi.id });
+          m.fechar(); App.toast('Link salvo.'); recarregar();
+        },
+        aoApagar: link ? async () => {
+          if (!(await App.confirmar('Tirar este link da Mídia? A pasta continua no Google Drive.', 'Sim, tirar'))) return;
+          await App.db.remove('ministerio_links', link.id);
+          m.fechar(); App.toast('Link tirado.'); recarregar();
+        } : null,
+      });
+      m = App.modal(link ? 'Editar link' : 'Adicionar link', [link ? App.carimbo(link) : null, form]);
+    };
+    el.appendChild(h('section.card.links-min',
+      h('div.card-topo', h('h2', '📁 Só para a Mídia'),
+        pode ? h('button.btn.secundario.pequeno', { type: 'button', onclick: () => editar(null) }, '+ Link') : null),
+      links.length
+        ? h('ul.lista-links', links.map((l) => h('li',
+          h('a.btn', { href: l.url, target: '_blank', rel: 'noopener' }, l.titulo),
+          pode ? h('button.link', { type: 'button', onclick: () => editar(l) }, 'Editar') : null)))
+        : h('p.muted', 'Coloque aqui o link da pasta do Google Drive com as fotos. Só quem é da Mídia vai ver.'),
+      h('p.muted.links-nota', 'Só quem participa da Mídia vê este quadro.')));
+  }
+
   App.paginas.midia = {
     titulo: 'Mídia',
     async render(el, _p, recarregar) {
-      const fotos = await App.db.list('midia_fotos', { order: 'created_at' });
+      const [fotos, videos] = await Promise.all([
+        App.db.list('midia_fotos', { order: 'created_at' }),
+        MOSTRAR_VIDEOS ? App.db.list('midia_videos', { order: 'created_at' }) : [],
+      ]);
       const podeFotos = App.posso('midia_fotos');
-      el.appendChild(App.cabecalho('Mídia', 'Fotos dos cultos e quem cuida da mídia e do som.',
+      el.appendChild(App.cabecalho('Mídia', MOSTRAR_VIDEOS ? 'Fotos e vídeos dos cultos e quem cuida da mídia e do som.' : 'Fotos dos cultos e quem cuida da mídia e do som.',
+        podeFotos && MOSTRAR_VIDEOS ? h('button.btn.secundario', { type: 'button', onclick: () => adicionarVideo(recarregar) }, '+ Vídeo') : null,
         podeFotos ? h('button.btn', { type: 'button', onclick: () => enviarFotos(recarregar) }, '+ Enviar fotos') : null));
+      const redes = App.redes && App.redes({ zap: false });
+      if (redes) el.appendChild(h('div.midia-redes', h('span.muted', 'Mais fotos e vídeos nas nossas redes:'), redes));
 
-      // agrupa por dia do culto, do mais novo para o mais antigo
+      // agrupa fotos e vídeos por dia do culto, do mais novo para o mais antigo
       const porDia = {};
-      for (const f of fotos) (porDia[f.data] = porDia[f.data] || []).push(f);
+      const dia = (d) => (porDia[d] = porDia[d] || { fotos: [], videos: [] });
+      for (const f of fotos) dia(f.data).fotos.push(f);
+      for (const v of videos) dia(v.data).videos.push(v);
       const dias = Object.keys(porDia).sort().reverse();
+      const conteudo = (d) => [
+        porDia[d].fotos.length ? galeria(porDia[d].fotos, podeFotos, recarregar) : null,
+        listaVideos(porDia[d].videos, podeFotos, recarregar),
+      ];
       if (!dias.length) {
         el.appendChild(App.vazio(podeFotos ? 'Nenhuma foto ainda. Toque em "+ Enviar fotos" depois do culto.' : 'Nenhuma foto ainda. Depois do culto, as fotos aparecem aqui.'));
       } else {
         const [ultimo, ...anteriores] = dias;
         el.appendChild(h('section.card',
           h('h2', '📸 Último culto ', h('span.muted', '· ' + util.dataLonga(ultimo))),
-          galeria(porDia[ultimo], podeFotos, recarregar)));
+          conteudo(ultimo)));
         if (anteriores.length) {
           el.appendChild(h('details.passados', h('summary', `Cultos anteriores (${anteriores.length})`),
-            anteriores.map((d) => h('section.card', h('h3', util.dataLonga(d)), galeria(porDia[d], podeFotos, recarregar)))));
+            anteriores.map((d) => h('section.card', h('h3', util.dataLonga(d)), conteudo(d)))));
         }
       }
 
-      // escala é só para membros
-      if (!App.ehVisitante(App.perfil)) await quemServe(el);
+      // links da Mídia e escala são só para membros
+      if (!App.ehVisitante(App.perfil)) {
+        await linksDaMidia(el, recarregar);
+        await quemServe(el);
+      }
     },
   };
 })();
